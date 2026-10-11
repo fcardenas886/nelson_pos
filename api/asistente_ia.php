@@ -383,16 +383,25 @@ function resolverConocimientoLocal($q, $rol, $nombre) {
 
     // 16. Cotizaciones y Notas de Pedido
     if (str_contains($q, 'cotizaci') || str_contains($q, 'presupuesto') || str_contains($q, 'nota de pedido') || str_contains($q, 'apartar')) {
-        return "📄 **¿Cómo gestionar y enviar Cotizaciones o Notas de Pedido?**\n\n"
-            . "1. Ve al menú superior **Operaciones → Cotizaciones**.\n"
-            . "2. Presiona el botón verde **'Nueva Cotización'**.\n"
-            . "3. Selecciona al **Cliente** (o créalo si es nuevo) y agrega los productos con sus cantidades pactadas.\n"
-            . "4. Presiona **'Guardar Cotización'**.\n\n"
-            . "📲 **Para enviarla o compartirla con el cliente:**\n"
-            . "   * Presiona el botón **'Imprimir Ticket'** para emitir el comprobante térmico.\n"
-            . "   * Usa el botón de **WhatsApp / Enlace** para compartir el detalle directamente al teléfono del cliente.\n\n"
-            . "🛒 **Para facturar y cobrar en el POS:**\n"
-            . "   * Cuando el cliente confirme la compra, presiona el botón **'Cargar al POS'** y todos los artículos se transferirán instantáneamente al carrito de venta para cobrar con <kbd>F12</kbd>.";
+        $mencionaWsp = str_contains($q, 'wsp') || str_contains($q, 'whatsapp') || str_contains($q, 'enviar') || str_contains($q, 'mandar');
+        
+        $avisoEnvio = $mencionaWsp 
+            ? "⚠️ **El sistema no cuenta con envío directo por WhatsApp ni exportación a PDF.**\n\n" 
+            : "";
+
+        return $avisoEnvio
+            . "📄 **¿Cómo funcionan las Cotizaciones en el sistema?**\n\n"
+            . "El módulo de cotizaciones está diseñado para armar presupuestos previos o apartar pedidos y pasarlos a la caja:\n\n"
+            . "1. Ve al menú superior **Operaciones → Cotizaciones** (`cotizaciones.php`).\n"
+            . "2. Presiona el botón verde **'Nueva cotización'**.\n"
+            . "3. Selecciona al **Cliente** (opcional) y agrega los productos con sus cantidades y precios.\n"
+            . "4. Presiona **'Guardar cotización'**.\n\n"
+            . "👁️ **Ver detalle:**\n"
+            . "   * Presiona el botón con el ícono de **Ojo (Ver detalle)** para revisar en pantalla los artículos, precios y el monto total.\n\n"
+            . "🛒 **Para cobrar en Caja POS:**\n"
+            . "   * En el listado, presiona el botón azul **'A la caja'**.\n"
+            . "   * El sistema cargará todos los productos automáticamente en el carrito del **POS** listo para presionar <kbd>F12</kbd> y cobrar.\n\n"
+            . "💡 *Para compartir con el cliente:* Como no hay botón directo de WhatsApp, puedes revisar el total en el detalle y comunicárselo manualmente a tu cliente.";
     }
 
     // ----------------------------------------------------------------
@@ -402,7 +411,7 @@ function resolverConocimientoLocal($q, $rol, $nombre) {
         . "Puedo ayudarte paso a paso con cualquiera de las funciones del sistema:\n\n"
         . "🔹 **Ventas y Caja POS:** Cobros (<kbd>F12</kbd>), pago mixto, fiados con cupo, puntos, balanza (PLU), pausar ventas.\n"
         . "🔹 **Turnos y Arqueos:** Monto de apertura, arqueo ciego, cuadratura y Cierre Z.\n"
-        . "🔹 **Cotizaciones:** Crear notas de pedido, enviar al cliente y cargar al POS con 1 clic.\n"
+        . "🔹 **Cotizaciones:** Crear notas de pedido, ver detalle y pasarlas 'A la caja' con 1 clic.\n"
         . "🔹 **Inventario y Catálogo:** Crear productos, códigos EAN-8, etiquetas góndola, alertas de stock mínimo.\n"
         . "🔹 **Mermas y Kardex:** Trazabilidad de Stock Inicial, bajas por vencimiento o rotura y Utilidad Real Neta.\n"
         . "🔹 **Compras y Proveedores:** Recepción de facturas en 2 fases y cálculo de márgenes.\n\n"
@@ -418,10 +427,10 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
 
     $systemInstruction = "Eres el Asistente Oficial experto del software 'Minimarket POS Web v4.8.0'. "
         . "Tu ÚNICO propósito es guiar y responder dudas sobre el uso de este sistema POS a cajeros y administradores. "
-        . "ESTRUCTURA DE MÓDULOS DEL SISTEMA: "
-        . "- Caja POS (pos.php): Venta rápida, búsqueda por código de barra o nombre, cobro con F12 (Efectivo, Tarjeta, Transferencia, Fiado/Crédito interno, Puntos, Pago Mixto con cálculo de vuelto o monto faltante). Pausar ventas y recuperarlas en botón 'Pendientes'. Abrir gaveta con Ctrl+F10. "
+        . "ESTRUCTURA DE MÓDULOS DEL SISTEMA (LO QUE SÍ TIENE): "
+        . "- Caja POS (pos.php): Venta rápida, búsqueda por código de barra o nombre, cobro con F12 (Efectivo, Tarjeta, Transferencia, Fiado/Crédito interno si tiene cupo, Puntos, Pago Mixto con cálculo de vuelto o monto faltante). Pausar ventas y recuperarlas en botón 'Pendientes'. Abrir gaveta con Ctrl+F10. "
         . "- Turnos y Arqueo (caja.php): Apertura con monto inicial, asignación de caja física; cierre con Arqueo Ciego (conteo físico de efectivo, vouchers y transferencias), clave de supervisor y opción Cierre Z. Botón Retiro / Ingreso para justificar salidas de efectivo. "
-        . "- Operaciones -> Cotizaciones (cotizaciones.php): Crear notas de pedido y cotizaciones con cliente y productos, imprimir ticket, compartir por WhatsApp o enlace, y cargar directamente al carrito del POS con un clic. "
+        . "- Operaciones -> Cotizaciones (cotizaciones.php): Crear presupuestos/notas de pedido con cliente y productos, ver detalle en pantalla (icono de ojo), anular, y botón 'A la caja' para transferir los productos directo al carrito del POS para cobrar con F12. ATENCIÓN: El sistema NO tiene botón para enviar por WhatsApp, ni enviar por email, ni generar PDF; no inventes esas funciones. "
         . "- Operaciones -> Recepción de Compras (recepcion_compras.php): En 2 fases: Fase 1 ingresa stock y costo de factura del proveedor; Fase 2 actualiza precios con recálculo de margen sobre costo. "
         . "- Operaciones -> Devoluciones y Anulaciones (ventas.php, devoluciones.php): Anulación total reponiendo stock (incluso packs) o vales de devolución. "
         . "- Inventario -> Productos (productos.php): Catálogo, generar código EAN-8, generar PLU para balanza pesable, imprimir etiquetas de góndola, stock mínimo. "
@@ -431,12 +440,13 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
         . "- Maestros -> Ofertas (promociones.php): Descuentos por unidad y packs por volumen (ej. 3 por $2.000). "
         . "- Reportes -> Utilidades y Márgenes (reportes.php?tab=utilidades): Margen comercial sobre costo ((Venta - Costo)/Costo * 100), categorías desplegables en acordeón y Utilidad Real Neta descontando mermas. "
         . "- Configuración (configuracion.php): Logo, datos del local, terminales, boleta SII/DTE, impresora térmica y Asistente de IA. "
-        . "REGLAS CRÍTICAS: "
-        . "1. Responde ÚNICAMENTE sobre las funciones de Minimarket POS. "
-        . "2. Si el usuario pregunta algo ajeno al sistema (política, cocina, religión, ciencia, chistes), declina amablemente y reorienta a las funciones del POS. "
-        . "3. SI PREGUNTA POR UNA FUNCIÓN QUE NO TIENE EL SISTEMA (ej. nómina/sueldos o venta web): NUNCA inventes botones ni menús inexistentes. Declara con honestidad que no está integrada y ofrece la alternativa práctica dentro del sistema (ej. para pagos usar 'Retiro de Caja' con motivo; para pedidos online usar 'Cotizaciones / Notas de Pedido'). "
-        . "4. Usa formato claro con negritas, pasos numerados (1., 2., 3.) y atajos como <kbd>F12</kbd> o <kbd>Alt + I</kbd>. "
-        . "5. El usuario actual se llama '$nombre' y tiene el rol de '$rol'. Sé amable, profesional y conciso.";
+        . "REGLAS CRÍTICAS DE PRECISIÓN Y HONESTIDAD: "
+        . "1. Responde ÚNICAMENTE sobre las funciones REALES de Minimarket POS. NUNCA inventes funciones, botones o integraciones que no existen. "
+        . "2. SI PREGUNTA POR WHATSAPP EN COTIZACIONES O VENTAS: Aclara explícitamente que el sistema NO tiene integración de envío por WhatsApp ni exportación a PDF; explica que la cotización se consulta en pantalla con el botón 'Ver detalle' y se carga al POS con el botón 'A la caja'. "
+        . "3. SI PREGUNTA POR NÓMINAS / SUELDOS: Aclara que no hay módulo de sueldos y ofrece como alternativa 'Retiro de Caja' con motivo. "
+        . "4. Si el usuario pregunta algo ajeno al sistema (política, cocina, religión, ciencia, chistes), declina amablemente y reorienta a las funciones del POS. "
+        . "5. Usa formato claro con negritas, pasos numerados (1., 2., 3.) y atajos como <kbd>F12</kbd> o <kbd>Alt + I</kbd>. "
+        . "6. El usuario actual se llama '$nombre' y tiene el rol de '$rol'. Sé amable, profesional y conciso.";
 
     $body = [
         'contents' => [
