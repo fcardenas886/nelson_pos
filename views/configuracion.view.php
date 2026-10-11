@@ -38,6 +38,9 @@
   <button onclick="switchTab('tabApariencia')" class="btn btn-secondary tab-btn" id="btn-tabApariencia">
     🎨 Apariencia y Marca
   </button>
+  <button onclick="switchTab('tabAsistenteIA')" class="btn btn-secondary tab-btn" id="btn-tabAsistenteIA">
+    🤖 Asistente de IA
+  </button>
 </div>
 
 <!-- PESTAÑA 1: PARÁMETROS GENERALES -->
@@ -615,6 +618,84 @@ toggleBalanzaModo();
 
       <button type="submit" class="btn btn-primary" style="align-self: flex-start; padding: 0.75rem 2rem; font-size: 1rem; font-weight: bold; margin-top: 0.5rem;">
         <i class="fa-solid fa-floppy-disk"></i> Guardar Apariencia y Marca
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- PESTAÑA: ASISTENTE DE IA (SOPORTE OPERATIVO) -->
+<div id="tabAsistenteIA" class="tab-pane" style="display: none;">
+  <div class="table-card" style="padding: 1.75rem; max-width: 850px;">
+    <form method="POST" action="configuracion.php" style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <?= csrfField() ?>
+      <input type="hidden" name="action" value="save_config">
+
+      <div>
+        <h2 style="font-size: 1.1rem; font-weight: 600; color: #818cf8; border-bottom: 1px solid var(--border-dark); padding-bottom: 0.4rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-wand-magic-sparkles" style="color: #fde047;"></i> Asistente de IA para Soporte del Sistema
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.35rem;">
+          Controla la activación y el proveedor del Asistente virtual tipo chat que guía a cajeros y administradores en el uso de las funciones del POS.
+        </p>
+      </div>
+
+      <!-- Activar / Desactivar Widget -->
+      <div>
+        <label style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.5rem;">ESTADO DEL ASISTENTE FLOTANTE</label>
+        <?php $iaActivo = $config['ASISTENTE_IA_ACTIVO'] ?? 'true'; ?>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <label style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 2px solid <?= $iaActivo === 'true' ? 'var(--primary)' : 'var(--border-dark)' ?>; border-radius: 12px; cursor: pointer; background: rgba(15,23,42,0.6);">
+            <input type="radio" name="config[ASISTENTE_IA_ACTIVO]" value="true" <?= $iaActivo === 'true' ? 'checked' : '' ?>>
+            <div>
+              <strong style="color: #34d399; display: block;"><i class="fa-solid fa-circle-check"></i> Activado (Recomendado)</strong>
+              <small style="color: var(--text-muted); font-size: 0.75rem;">Muestra el botón flotante en todas las pantallas para resolver dudas operativas.</small>
+            </div>
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 2px solid <?= $iaActivo === 'false' ? 'var(--danger)' : 'var(--border-dark)' ?>; border-radius: 12px; cursor: pointer; background: rgba(15,23,42,0.6);">
+            <input type="radio" name="config[ASISTENTE_IA_ACTIVO]" value="false" <?= $iaActivo === 'false' ? 'checked' : '' ?>>
+            <div>
+              <strong style="color: #f87171; display: block;"><i class="fa-solid fa-circle-xmark"></i> Desactivado</strong>
+              <small style="color: var(--text-muted); font-size: 0.75rem;">Oculta el asistente flotante en todo el sistema.</small>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Proveedor de IA / Motor -->
+      <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border-dark); border-radius: 12px; padding: 1.25rem;">
+        <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+          <i class="fa-solid fa-microchip" style="color: #38bdf8;"></i> Motor de Inteligencia y Conocimiento
+        </h3>
+        <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">
+          El sistema cuenta con un <strong>Motor Local Integrado</strong> que responde al instante sin costo alguno y sin depender de conexión externa. Opcionalmente, puedes configurar una clave de <strong>Google Gemini</strong> para potenciar las respuestas con un modelo generativo en la nube.
+        </p>
+
+        <div>
+          <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">CLAVE DE API GOOGLE GEMINI (OPCIONAL)</label>
+          <input type="password" 
+                 name="config[GEMINI_API_KEY]" 
+                 value="<?= htmlspecialchars($config['GEMINI_API_KEY'] ?? '') ?>" 
+                 placeholder="AIzaSy... (Dejar en blanco para usar el motor local integrado sin costo)" 
+                 class="form-control" 
+                 style="font-family: monospace; font-size: 0.85rem;">
+          <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.35rem;">
+            Si se deja en blanco, el asistente operará 100% con su base de conocimiento estructurada y precisa en el servidor local.
+          </small>
+        </div>
+      </div>
+
+      <!-- Alcance y Guardrails -->
+      <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 1rem 1.25rem;">
+        <strong style="color: #34d399; font-size: 0.88rem; display: flex; align-items: center; gap: 0.4rem;">
+          <i class="fa-solid fa-shield-halved"></i> Guardrails de Seguridad y Especialización Activos
+        </strong>
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.35rem 0 0 0; line-height: 1.45;">
+          El asistente está programado para rechazar consultas ajenas al negocio (como política, recetas o entretenimiento) y guiar exclusivamente en las funciones del punto de venta. Para funciones no disponibles directamente en el sistema, ofrece siempre la alternativa práctica adecuada sin inventar menús inexistentes.
+        </p>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="align-self: flex-start; padding: 0.75rem 2rem; font-size: 1rem; font-weight: bold;">
+        <i class="fa-solid fa-floppy-disk"></i> Guardar Configuración de IA
       </button>
     </form>
   </div>

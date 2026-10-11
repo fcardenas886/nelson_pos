@@ -5,9 +5,9 @@ $user = currentUser();
 $currentPage = basename($_SERVER['PHP_SELF']);
 $esSupervisorNav = in_array($user['rol'], ['Administrador', 'Supervisor'], true);
 
-// Cargar personalización visual
+// Cargar personalización visual y estado del asistente IA
 $pdoHeader = getDB();
-$stmtAppCfg = $pdoHeader->query("SELECT Clave, Valor FROM configuraciones WHERE Clave IN ('TEMA_MODO', 'TEMA_COLOR_ACENTO', 'MINIMARKET_LOGO_URL', 'MINIMARKET_NOMBRE')");
+$stmtAppCfg = $pdoHeader->query("SELECT Clave, Valor FROM configuraciones WHERE Clave IN ('TEMA_MODO', 'TEMA_COLOR_ACENTO', 'MINIMARKET_LOGO_URL', 'MINIMARKET_NOMBRE', 'ASISTENTE_IA_ACTIVO')");
 $appCfg = [];
 while ($r = $stmtAppCfg->fetch(PDO::FETCH_ASSOC)) {
     $appCfg[$r['Clave']] = $r['Valor'];
@@ -16,6 +16,7 @@ $temaModo = $appCfg['TEMA_MODO'] ?? 'dark';
 $temaAcento = $appCfg['TEMA_COLOR_ACENTO'] ?? 'indigo';
 $logoUrl = $appCfg['MINIMARKET_LOGO_URL'] ?? '';
 $nombreEmpresa = $appCfg['MINIMARKET_NOMBRE'] ?? 'Minimarket POS';
+$iaActivoGlobal = ($appCfg['ASISTENTE_IA_ACTIVO'] ?? 'true') !== 'false';
 ?>
 <!DOCTYPE html>
 <html lang="es" data-theme="<?= htmlspecialchars($temaModo) ?>" data-accent="<?= htmlspecialchars($temaAcento) ?>">

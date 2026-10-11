@@ -1,10 +1,17 @@
 <?php
 // Version de la app: unica fuente de verdad, para que login y footer nunca queden desincronizados.
-define('APP_VERSION', 'v4.7.2');
+define('APP_VERSION', 'v4.8.0');
 
 // Novedades reales por versión, para la pantalla de bienvenida y el módulo "Acerca de".
 // Registra la cronología completa de la evolución del sistema desde su inicio.
 define('APP_CHANGELOG', [
+    'v4.8.0' => [
+        'Agente Asistente de IA Integrado (Tipo Chat): Widget interactivo flotante en todas las pantallas para responder dudas y guiar en el uso de las funciones del sistema (atajo Alt + I).',
+        'Guardrails Estrictos de Operación: Especializado exclusivamente en procedimientos del POS, caja, inventario, compras, mermas y reportes, declinando amablemente preguntas ajenas a la tienda.',
+        'Tratamiento Honesto de Funciones Ausentes: Si una función no está disponible directamente, el asistente no inventa rutas inexistentes y ofrece la alternativa práctica dentro del sistema (ej. retiros de caja para gastos/sueldos o notas de pedido para reservas).',
+        'Motor Dual Híbrido: Base de conocimiento estructurada y offline con más de 35 guías paso a paso, con soporte opcional para Google Gemini AI mediante API Key en Configuración.',
+        'Sugerencias Rápidas y Persistencia: Chips interactivos de preguntas frecuentes, formato enriquecido con atajos de teclado y memoria de sesión entre pantallas.',
+    ],
     'v4.7.2' => [
         'Kardex con Stock Inicial de Apertura: Registro y visualización del movimiento inicial de apertura de catálogo (INICIAL) para todos los productos, garantizando trazabilidad completa desde el origen.',
         'Buscador Inteligente de Productos en Kardex: Selector ergonómico con autocompletado en vivo por nombre, código de barras o código PLU, mostrando stock actual y categoría.',
