@@ -89,6 +89,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ':plu' => $codigoPLU
                         ]);
                         $id = (int)$pdo->lastInsertId();
+
+                        // Registrar movimiento de apertura (Stock Inicial) en Kardex
+                        if ($id > 0) {
+                            $stmtKardexIni = $pdo->prepare("
+                                INSERT INTO kardex (ProductoID, TipoTransaccion, CantidadEntrada, CantidadSalida, StockSaldo, ValorUnitario, CostoMedioPonderado, FechaMovimiento)
+                                VALUES (:pid, 'INICIAL', :cant_in, 0, :saldo, :costo, :cmp, NOW())
+                            ");
+                            $stmtKardexIni->execute([
+                                ':pid' => $id,
+                                ':cant_in' => $stock,
+                                ':saldo' => $stock,
+                                ':costo' => (int)($costoCompra > 0 ? $costoCompra : $precioVenta),
+                                ':cmp' => (int)($costoCompra > 0 ? $costoCompra : $precioVenta)
+                            ]);
+                        }
                     }
 
                     // Pesable sin PLU: asignarlo automáticamente a partir del ID ya conocido

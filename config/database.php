@@ -1,10 +1,18 @@
 <?php
 // Version de la app: unica fuente de verdad, para que login y footer nunca queden desincronizados.
-define('APP_VERSION', 'v4.7.1');
+define('APP_VERSION', 'v4.7.2');
 
 // Novedades reales por versión, para la pantalla de bienvenida y el módulo "Acerca de".
 // Registra la cronología completa de la evolución del sistema desde su inicio.
 define('APP_CHANGELOG', [
+    'v4.7.2' => [
+        'Kardex con Stock Inicial de Apertura: Registro y visualización del movimiento inicial de apertura de catálogo (INICIAL) para todos los productos, garantizando trazabilidad completa desde el origen.',
+        'Buscador Inteligente de Productos en Kardex: Selector ergonómico con autocompletado en vivo por nombre, código de barras o código PLU, mostrando stock actual y categoría.',
+        'Tarjeta de Resumen y KPIs de Trazabilidad: Panel métrico al seleccionar un producto con Stock Inicial, Total Entradas (+), Total Salidas (-) y Stock Saldo Actual (=).',
+        'Filtro Rápido en Vivo de la Tabla: Barra de búsqueda instantánea para filtrar movimientos en tiempo real por texto o código sin recargar la página.',
+        'Filtros por Tipo de Movimiento y Fechas: Selector estructurado para auditar Stock Inicial, Ventas, Compras, Ajustes o Devoluciones con exportación a Excel.',
+        'Automatización en Creación de Productos: Registro automático e instantáneo del Stock Inicial en Kardex al dar de alta nuevos productos.',
+    ],
     'v4.7.1' => [
         'Utilidades por Categoría Desplegables: Vista jerárquica tipo acordeón que agrupa ventas y ganancias por categoría, permitiendo expandir y colapsar para ver el detalle de cada producto.',
         'Selector y Filtro de Categorías en Utilidades: Menú desplegable para aislar rápidamente cualquier categoría específica con auto-apertura instantánea.',
