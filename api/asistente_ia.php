@@ -381,6 +381,20 @@ function resolverConocimientoLocal($q, $rol, $nombre) {
             . "3. Puedes emitir un vale de devolución o entregar el dinero en efectivo.";
     }
 
+    // 16. Cotizaciones y Notas de Pedido
+    if (str_contains($q, 'cotizaci') || str_contains($q, 'presupuesto') || str_contains($q, 'nota de pedido') || str_contains($q, 'apartar')) {
+        return "📄 **¿Cómo gestionar y enviar Cotizaciones o Notas de Pedido?**\n\n"
+            . "1. Ve al menú superior **Operaciones → Cotizaciones**.\n"
+            . "2. Presiona el botón verde **'Nueva Cotización'**.\n"
+            . "3. Selecciona al **Cliente** (o créalo si es nuevo) y agrega los productos con sus cantidades pactadas.\n"
+            . "4. Presiona **'Guardar Cotización'**.\n\n"
+            . "📲 **Para enviarla o compartirla con el cliente:**\n"
+            . "   * Presiona el botón **'Imprimir Ticket'** para emitir el comprobante térmico.\n"
+            . "   * Usa el botón de **WhatsApp / Enlace** para compartir el detalle directamente al teléfono del cliente.\n\n"
+            . "🛒 **Para facturar y cobrar en el POS:**\n"
+            . "   * Cuando el cliente confirme la compra, presiona el botón **'Cargar al POS'** y todos los artículos se transferirán instantáneamente al carrito de venta para cobrar con <kbd>F12</kbd>.";
+    }
+
     // ----------------------------------------------------------------
     // RESPUESTA GENERAL SI NO COINCIDE CON NINGÚN PATRÓN ESPECÍFICO
     // ----------------------------------------------------------------
@@ -388,6 +402,7 @@ function resolverConocimientoLocal($q, $rol, $nombre) {
         . "Puedo ayudarte paso a paso con cualquiera de las funciones del sistema:\n\n"
         . "🔹 **Ventas y Caja POS:** Cobros (<kbd>F12</kbd>), pago mixto, fiados con cupo, puntos, balanza (PLU), pausar ventas.\n"
         . "🔹 **Turnos y Arqueos:** Monto de apertura, arqueo ciego, cuadratura y Cierre Z.\n"
+        . "🔹 **Cotizaciones:** Crear notas de pedido, enviar al cliente y cargar al POS con 1 clic.\n"
         . "🔹 **Inventario y Catálogo:** Crear productos, códigos EAN-8, etiquetas góndola, alertas de stock mínimo.\n"
         . "🔹 **Mermas y Kardex:** Trazabilidad de Stock Inicial, bajas por vencimiento o rotura y Utilidad Real Neta.\n"
         . "🔹 **Compras y Proveedores:** Recepción de facturas en 2 fases y cálculo de márgenes.\n\n"
@@ -395,18 +410,32 @@ function resolverConocimientoLocal($q, $rol, $nombre) {
 }
 
 /**
- * Consulta a la API de Gemini (en caso de tener configurada una API Key)
+ * Consulta a la API de Gemini (utilizando los modelos activos de Google AI)
  */
 function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
-    $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . urlencode($apiKey);
+    // Modelos admitidos en orden de preferencia
+    $modelos = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-2.5-pro'];
 
     $systemInstruction = "Eres el Asistente Oficial experto del software 'Minimarket POS Web v4.8.0'. "
-        . "Tu ÚNICO propósito es guiar y responder dudas sobre el uso de este sistema POS. "
+        . "Tu ÚNICO propósito es guiar y responder dudas sobre el uso de este sistema POS a cajeros y administradores. "
+        . "ESTRUCTURA DE MÓDULOS DEL SISTEMA: "
+        . "- Caja POS (pos.php): Venta rápida, búsqueda por código de barra o nombre, cobro con F12 (Efectivo, Tarjeta, Transferencia, Fiado/Crédito interno, Puntos, Pago Mixto con cálculo de vuelto o monto faltante). Pausar ventas y recuperarlas en botón 'Pendientes'. Abrir gaveta con Ctrl+F10. "
+        . "- Turnos y Arqueo (caja.php): Apertura con monto inicial, asignación de caja física; cierre con Arqueo Ciego (conteo físico de efectivo, vouchers y transferencias), clave de supervisor y opción Cierre Z. Botón Retiro / Ingreso para justificar salidas de efectivo. "
+        . "- Operaciones -> Cotizaciones (cotizaciones.php): Crear notas de pedido y cotizaciones con cliente y productos, imprimir ticket, compartir por WhatsApp o enlace, y cargar directamente al carrito del POS con un clic. "
+        . "- Operaciones -> Recepción de Compras (recepcion_compras.php): En 2 fases: Fase 1 ingresa stock y costo de factura del proveedor; Fase 2 actualiza precios con recálculo de margen sobre costo. "
+        . "- Operaciones -> Devoluciones y Anulaciones (ventas.php, devoluciones.php): Anulación total reponiendo stock (incluso packs) o vales de devolución. "
+        . "- Inventario -> Productos (productos.php): Catálogo, generar código EAN-8, generar PLU para balanza pesable, imprimir etiquetas de góndola, stock mínimo. "
+        . "- Inventario -> Kardex (kardex.php): Trazabilidad de movimientos con movimiento INICIAL de apertura de catálogo, buscador predictivo, tarjeta resumen con KPIs (Stock Inicial, Entradas +, Salidas -, Saldo Actual =), filtros y Excel. "
+        . "- Inventario -> Ajustes de Stock (ajustes_stock.php) y Mermas (reportes.php?tab=mermas): Registro clasificado de bajas (Vencimiento, Daño/Rotura, Pérdida, Consumo Interno) congelando costo unitario. "
+        . "- Maestros -> Clientes y Créditos (clientes.php): Cupo de fiado, pagos/abonos con algoritmo FIFO, y acumulación/canje de puntos (1 punto = $1). "
+        . "- Maestros -> Ofertas (promociones.php): Descuentos por unidad y packs por volumen (ej. 3 por $2.000). "
+        . "- Reportes -> Utilidades y Márgenes (reportes.php?tab=utilidades): Margen comercial sobre costo ((Venta - Costo)/Costo * 100), categorías desplegables en acordeón y Utilidad Real Neta descontando mermas. "
+        . "- Configuración (configuracion.php): Logo, datos del local, terminales, boleta SII/DTE, impresora térmica y Asistente de IA. "
         . "REGLAS CRÍTICAS: "
-        . "1. Responde ÚNICAMENTE sobre las funciones del sistema POS (ventas, POS, turnos, arqueo ciego, kardex, mermas, compras, clientes, fiados, utilidades, configuraciones). "
-        . "2. Si el usuario pregunta algo ajeno al sistema (política, cocina, ciencia, chistes), debes rechazar amablemente y recordar que solo brindas soporte de Minimarket POS. "
-        . "3. SI EL USUARIO PREGUNTA POR UNA FUNCIÓN QUE EL SISTEMA NO TIENE (ej. pago de sueldos/nóminas, tienda online, delivery externo): NO inventes botones ni menús. Aclara honestamente que el sistema no lo tiene y ofrece la alternativa práctica dentro del sistema (ej. para pagos/sueldos sugerir 'Retiro de Caja' con motivo; para ventas web sugerir 'Cotizaciones/Notas de Pedido'). "
-        . "4. Usa formato claro con negritas, pasos numerados (1., 2., 3.) y atajos en recuadros como <kbd>F12</kbd>. "
+        . "1. Responde ÚNICAMENTE sobre las funciones de Minimarket POS. "
+        . "2. Si el usuario pregunta algo ajeno al sistema (política, cocina, religión, ciencia, chistes), declina amablemente y reorienta a las funciones del POS. "
+        . "3. SI PREGUNTA POR UNA FUNCIÓN QUE NO TIENE EL SISTEMA (ej. nómina/sueldos o venta web): NUNCA inventes botones ni menús inexistentes. Declara con honestidad que no está integrada y ofrece la alternativa práctica dentro del sistema (ej. para pagos usar 'Retiro de Caja' con motivo; para pedidos online usar 'Cotizaciones / Notas de Pedido'). "
+        . "4. Usa formato claro con negritas, pasos numerados (1., 2., 3.) y atajos como <kbd>F12</kbd> o <kbd>Alt + I</kbd>. "
         . "5. El usuario actual se llama '$nombre' y tiene el rol de '$rol'. Sé amable, profesional y conciso.";
 
     $body = [
@@ -423,26 +452,31 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
             'maxOutputTokens' => 800
         ]
     ];
+    $jsonBody = json_encode($body);
 
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
-    curl_setopt($ch, CURLOPT_TIMEOUT, 6);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    foreach ($modelos as $modelo) {
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelo}:generateContent?key=" . urlencode($apiKey);
 
-    $res = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonBody);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 9);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
-    if ($httpCode === 200 && $res) {
-        $json = json_decode($res, true);
-        $texto = $json['candidates'][0]['content']['parts'][0]['text'] ?? null;
-        if (!empty($texto)) {
-            return trim($texto);
+        $res = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode === 200 && $res) {
+            $json = json_decode($res, true);
+            $texto = $json['candidates'][0]['content']['parts'][0]['text'] ?? null;
+            if (!empty($texto)) {
+                return trim($texto);
+            }
         }
     }
 
-    return null; // Si falla, el controlador hace fallback al motor local
+    return null; // Si todos los modelos fallan, el controlador hace fallback al motor local
 }
