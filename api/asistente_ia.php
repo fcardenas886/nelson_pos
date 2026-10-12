@@ -81,14 +81,15 @@ foreach ($temasProhibidos as $tp) {
 
 // Palabras clave que confirman que la consulta sí tiene relación con el sistema
 $palabrasClaveSistema = [
-    'pos', 'caja', 'turno', 'venta', 'vender', 'cobrar', 'efectivo', 'tarjeta', 'transferencia',
+    'pos', 'caja', 'turno', 'venta', 'vender', 'vend', 'cobrar', 'cobr', 'cuánto', 'cuanto', 'efectivo', 'tarjeta', 'transferencia',
     'fiado', 'crédito', 'puntos', 'vuelto', 'producto', 'código', 'barra', 'ean', 'plu', 'balanza',
     'pesable', 'kardex', 'stock', 'inventario', 'merma', 'pérdida', 'vencimiento', 'ajuste',
     'compra', 'factura', 'guía', 'proveedor', 'cliente', 'devolución', 'anular', 'vale',
     'reporte', 'utilidad', 'margen', 'costo', 'ganancia', 'cierre', 'arqueo', 'z', 'gaveta',
     'impresora', 'ticket', 'precio', 'promoción', 'oferta', 'pack', 'descuento', 'pausar',
     'pendiente', 'usuario', 'clave', 'rol', 'sueldo', 'gasto', 'servicio', 'online', 'web', 'sii',
-    'boleta', 'cómo', 'donde', 'ayuda', 'manual', 'a4', 'pliego', 'hoja', 'etiqueta', 'logo'
+    'boleta', 'cómo', 'donde', 'ayuda', 'manual', 'a4', 'pliego', 'hoja', 'etiqueta', 'logo',
+    'dinero', 'plata', 'total'
 ];
 
 $coincideSistema = false;
@@ -114,10 +115,67 @@ if ($esPreguntaExterna && !$coincideSistema) {
 }
 
 // --------------------------------------------------------------------
+// 2.1 OBTENER MÉTRICAS DEL DÍA EN TIEMPO REAL (Contexto Operativo)
+// --------------------------------------------------------------------
+$kpiVentasHoy = ['total_ventas' => 0, 'total_monto' => 0];
+$mediosPagoHoy = [];
+$turnoUsuario = null;
+$alertasStockCount = 0;
+
+try {
+    // Total ventas completadas hoy
+    $stmtVHoy = $pdo->query("
+        SELECT COUNT(*) as total_ventas, COALESCE(SUM(MontoTotal), 0) as total_monto 
+        FROM ventas 
+        WHERE DATE(FechaVenta) = CURRENT_DATE() AND Estado = 'Completada'
+    ");
+    if ($stmtVHoy) {
+        $kpiVentasHoy = $stmtVHoy->fetch(PDO::FETCH_ASSOC) ?: $kpiVentasHoy;
+    }
+
+    // Desglose medios de pago de hoy
+    $stmtPagos = $pdo->query("
+        SELECT pv.MetodoPago, COALESCE(SUM(pv.Monto), 0) as total 
+        FROM pagosventa pv 
+        JOIN ventas v ON pv.VentaID = v.VentaID 
+        WHERE DATE(v.FechaVenta) = CURRENT_DATE() AND v.Estado = 'Completada' 
+        GROUP BY pv.MetodoPago
+    ");
+    if ($stmtPagos) {
+        $mediosPagoHoy = $stmtPagos->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // Turno actual del usuario
+    $stmtTu = $pdo->prepare("
+        SELECT TurnoID, FechaApertura, MontoApertura, Estado 
+        FROM turnos 
+        WHERE UsuarioID = :uid AND Estado = 'Abierto' 
+        ORDER BY TurnoID DESC LIMIT 1
+    ");
+    $stmtTu->execute([':uid' => $user['id']]);
+    $turnoUsuario = $stmtTu->fetch(PDO::FETCH_ASSOC) ?: null;
+
+    // Alertas de stock bajo
+    $stmtStock = $pdo->query("SELECT COUNT(*) FROM productos WHERE Stock <= StockMinimo AND Activo = TRUE");
+    $alertasStockCount = $stmtStock ? (int)$stmtStock->fetchColumn() : 0;
+} catch (Exception $e) {
+    // Continuar con valores por defecto
+}
+
+$contextoEnVivo = [
+    'fecha_hoy' => date('d/m/Y'),
+    'ventas_monto' => (float)$kpiVentasHoy['total_monto'],
+    'ventas_cant' => (int)$kpiVentasHoy['total_ventas'],
+    'medios_pago' => $mediosPagoHoy,
+    'turno' => $turnoUsuario,
+    'alertas_stock' => $alertasStockCount
+];
+
+// --------------------------------------------------------------------
 // 3. INTENTO DE RESPUESTA MEDIANTE CLOUD LLM (GEMINI) SI ESTÁ CONFIGURADO
 // --------------------------------------------------------------------
 if (!empty($apiKeyGemini) && (str_starts_with($apiKeyGemini, 'AQ.') || str_starts_with($apiKeyGemini, 'AIza')) && strlen($apiKeyGemini) >= 30) {
-    $respuestaGemini = consultarGemini($mensaje, $apiKeyGemini, $userRol, $userNombre);
+    $respuestaGemini = consultarGemini($mensaje, $apiKeyGemini, $userRol, $userNombre, $contextoEnVivo);
     if ($respuestaGemini !== null) {
         echo json_encode([
             'success' => true,
@@ -131,7 +189,7 @@ if (!empty($apiKeyGemini) && (str_starts_with($apiKeyGemini, 'AQ.') || str_start
 // --------------------------------------------------------------------
 // 4. MOTOR EXPERTO DE INTENCIONES LOCAL (OFFLINE / 100% DISPONIBLE)
 // --------------------------------------------------------------------
-$respuestaLocal = resolverConocimientoLocal($mensajeLower, $userRol, $userNombre);
+$respuestaLocal = resolverConocimientoLocal($mensajeLower, $userRol, $userNombre, $contextoEnVivo);
 
 echo json_encode([
     'success' => true,
@@ -148,7 +206,7 @@ exit;
 /**
  * Motor semántico de resolución local con manual completo y tratamiento riguroso de funciones ausentes
  */
-function resolverConocimientoLocal($q, $rol, $nombre) {
+function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
     
     // ----------------------------------------------------------------
     // SECCIÓN 0: SALUDOS Y SOLICITUD DE AYUDA GENERAL
@@ -252,6 +310,35 @@ function resolverConocimientoLocal($q, $rol, $nombre) {
     // ----------------------------------------------------------------
     // SECCIÓN 2: FUNCIONES REALES DEL SISTEMA (Guía Paso a Paso)
     // ----------------------------------------------------------------
+
+    // 2.0 Ventas del Día / ¿Cuánto vendí hoy? / ¿Cómo sé cuánto vendí?
+    if (preg_match('/(cu[aá]nto\s*(se\s*)?(ha\s*)?(he\s*)?vend[ií]|ventas?\s*(de|del)?\s*hoy|ventas?\s*del\s*d[ií]a|total\s*vendido|lo\s*que\s*vend[ií]|c[oó]mo\s*s[eé]\s*cu[aá]nto\s*(se\s*)?vend[ií]|saber\s*cu[aá]nto\s*(se\s*)?vend[ií]|cu[aá]nto\s*llevo\s*vendido|cu[aá]nto\s*va\s*vendido)/ui', $q)) {
+        $montoFmt = '$' . number_format($contextoEnVivo['ventas_monto'] ?? 0, 0, ',', '.');
+        $cantVentas = (int)($contextoEnVivo['ventas_cant'] ?? 0);
+        
+        $desglose = "";
+        if (!empty($contextoEnVivo['medios_pago'])) {
+            $pItems = [];
+            foreach ($contextoEnVivo['medios_pago'] as $mp) {
+                $pItems[] = "• **{$mp['MetodoPago']}:** $" . number_format($mp['total'], 0, ',', '.');
+            }
+            $desglose = "\n\n💳 **Desglose por método de pago hoy:**\n" . implode("\n", $pItems);
+        }
+        
+        return "📊 **Ventas del Día de Hoy (" . ($contextoEnVivo['fecha_hoy'] ?? date('d/m/Y')) . "):**\n\n"
+            . "Actualmente llevas recaudado **$montoFmt CLP** en **$cantVentas venta(s) completada(s)**."
+            . $desglose . "\n\n"
+            . "🔍 **¿Dónde puedes consultarlo en el sistema?**\n\n"
+            . "1. 🏠 **Panel de Inicio (Dashboard - `index.php`):**\n"
+            . "   * La opción más rápida: al entrar al sistema, la primera tarjeta arriba a la izquierda muestra **'Ventas del Día'** con el monto total y transacciones en tiempo real.\n\n"
+            . "2. 🧾 **Caja y Ventas → Ventas y Comprobantes (`ventas.php`):**\n"
+            . "   * Muestra el listado de cada boleta, factura y ticket emitido hoy, con detalle de productos, cajero y método de pago.\n\n"
+            . "3. 📈 **Reportes → Ventas y Medios de Pago (`reportes.php?tab=ventas`):**\n"
+            . "   * Presiona el botón rápido **'Hoy'** para ver gráficos de venta por hora y comparativas.\n\n"
+            . "4. 💵 **Caja y Ventas → Turnos y Arqueo (`caja.php`):**\n"
+            . "   * Si solo deseas revisar lo acumulado en tu turno actual abierto en esta caja.\n\n"
+            . "💡 *Nota: No necesitas hacer un arqueo ciego ni Cierre Z para consultar lo que llevas vendido; el Cierre Z es solo para el balance fiscal al finalizar la jornada laboral.*";
+    }
 
     // 2.1 Abrir Caja y Turnos
     if ((preg_match('/(abr|apertur|inici)/u', $q) && (str_contains($q, 'caja') || str_contains($q, 'turno') || str_contains($q, 'dia') || str_contains($q, 'día'))) || str_contains($q, 'fondo fijo') || str_contains($q, 'abrir caja')) {
@@ -667,7 +754,7 @@ function resolverConocimientoLocal($q, $rol, $nombre) {
  * Consulta a la API de Gemini (utilizando los modelos activos de Google AI)
  * Con guardrails estrictos de honestidad y verificación instantánea de clave.
  */
-function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
+function consultarGemini($pregunta, $apiKey, $rol, $nombre, $contextoEnVivo = []) {
     // Si la clave no tiene el formato estándar de Google AI Studio (AQ. o AIza), no ejecutar peticiones lentas
     if (empty($apiKey) || (!str_starts_with($apiKey, 'AQ.') && !str_starts_with($apiKey, 'AIza')) || strlen($apiKey) < 30) {
         return null;
@@ -675,13 +762,39 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
 
     $modelos = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-flash-latest'];
 
+    $montoCLP = '$' . number_format($contextoEnVivo['ventas_monto'] ?? 0, 0, ',', '.');
+    $cantVentas = (int)($contextoEnVivo['ventas_cant'] ?? 0);
+    $fechaHoy = $contextoEnVivo['fecha_hoy'] ?? date('d/m/Y');
+
+    $turnoTxt = "Sin turno abierto en este momento";
+    if (!empty($contextoEnVivo['turno'])) {
+        $horaApertura = date('H:i', strtotime($contextoEnVivo['turno']['FechaApertura']));
+        $fondo = '$' . number_format($contextoEnVivo['turno']['MontoApertura'], 0, ',', '.');
+        $turnoTxt = "Turno #{$contextoEnVivo['turno']['TurnoID']} ABIERTO desde las {$horaApertura} con fondo inicial de {$fondo}";
+    }
+
+    $pagosList = [];
+    if (!empty($contextoEnVivo['medios_pago'])) {
+        foreach ($contextoEnVivo['medios_pago'] as $mp) {
+            $pagosList[] = $mp['MetodoPago'] . ': $' . number_format($mp['total'], 0, ',', '.');
+        }
+    }
+    $pagosTxt = !empty($pagosList) ? (" | Desglose por método de pago: " . implode(', ', $pagosList)) : "";
+
+    $liveDataPrompt = "DATOS EN TIEMPO REAL DEL SISTEMA HOY ({$fechaHoy}):\n"
+        . "- Total ventas completadas hoy: {$montoCLP} CLP en {$cantVentas} transacciones{$pagosTxt}.\n"
+        . "- Estado de caja de {$nombre}: {$turnoTxt}.\n\n";
+
     $systemInstruction = "Eres el Asistente Oficial experto del software 'Minimarket POS Web v4.9.0'. "
         . "Tu ÚNICO propósito es guiar y responder dudas sobre el uso de este sistema POS a cajeros y administradores. "
         . "REGLA CRÍTICA DE HONESTIDAD ABSOLUTA: Si el usuario te pregunta por cualquier función, botón, menú, módulo o integración que NO esté explícitamente detallada en la lista de módulos de Minimarket POS, o si no sabes con certeza cómo se hace algo, TIENES LA OBLIGACIÓN ESTRICTA de declarar con honestidad: 'Esta función no está disponible en Minimarket POS' o 'No dispongo de información sobre esa función en el sistema'. NUNCA inventes funciones, botones, menús ni atajos que no existan. "
         . "ESTRUCTURA DE MÓDULOS DEL SISTEMA (LO QUE SÍ TIENE): "
+        . "- Inicio / Panel Principal (index.php): En la pantalla de bienvenida/dashboard, la primera tarjeta arriba a la izquierda muestra 'Ventas del Día' con el monto total acumulado en CLP y la cantidad de transacciones completadas hoy en tiempo real. Es la forma más rápida y directa de consultar cuánto se ha vendido en el día sin entrar a submenús. "
         . "- Caja POS (pos.php): Venta rápida con lector o búsqueda, atajos (F12 cobrar, Ctrl+F10 gaveta, F2 buscador, +/- cantidad, Supr eliminar). Cobro en Efectivo, Tarjeta Transbank/POS, Transferencia, Fiado/Crédito interno con cupo, Puntos (1 pt = $1 CLP) y Pago Mixto. Pausar y recuperar ventas en botón 'Pendientes'. Descuentos en caja (porcentaje o monto). Modos de pantalla: Supermercado (rápido escáner), Táctil (touchscreen con tarjetas grandes) y Clásico (dividido catálogo y carrito). Modo Offline en IndexedDB con sincronización automática. "
         . "- Pesables y Balanza (productos.php, pos.php, configuracion.php): Casilla 'Es Pesable', botón '⚡ Generar PLU' (4 dígitos). Balanza con etiqueta EAN-13 o sin etiqueta con ventana interactiva para ingresar kilos (calcula $) o monto $ (calcula kilos). "
-        . "- Caja y Ventas -> Turnos y Arqueo (caja.php): Apertura de turno con monto de fondo y selección de caja física; botón 'Retiro / Ingreso' para justificar salidas de efectivo (pagos a proveedores, adelantos); cierre de turno mediante Arqueo Ciego honesto (conteo físico de efectivo en billetes/monedas, vouchers y transferencias), clave de supervisor (si es cajero) y casilla marcada por defecto 'Generar Cierre Z de esta caja también' para emitir el Z al finalizar la jornada. "
+        . "- Caja y Ventas -> Ventas y Comprobantes (ventas.php): Muestra el historial completo de todas las boletas, facturas y tickets emitidos en el día por defecto, con buscador por folio o cliente, cajero, estado (Completada/Anulada), detalle de productos, método de pago y botón para reimprimir el comprobante. "
+        . "- Caja y Ventas -> Turnos y Arqueo (caja.php): Apertura de turno con monto de fondo y selección de caja física; botón 'Retiro / Ingreso' para justificar salidas de efectivo (pagos a proveedores, adelantos); consulta de lo recaudado únicamente en el turno en curso de la caja física actual; cierre de turno mediante Arqueo Ciego honesto (conteo físico de efectivo en billetes/monedas, vouchers y transferencias), clave de supervisor (si es cajero) y casilla marcada por defecto 'Generar Cierre Z de esta caja también' para emitir el Z al finalizar la jornada. "
+        . "- Reportes -> Ventas y Medios de Pago (reportes.php?tab=ventas): Centro de reportes con selector rápido 'Hoy', gráficos de ventas por hora, comparativas y desglose por métodos de pago (Efectivo, Tarjeta Transbank, Transferencia, Fiado). "
         . "- Reportes -> Cierre Z Fiscal (reportes_z.php): Módulo exclusivo para consultar el historial de todos los Cierres Z correlativos (#Z) emitidos, con fecha, supervisor, boletas/facturas, monto neto, IVA (19%) y total recaudado. También incluye botón para 'Generar Cierre Z Diario' de forma manual si no se emitió desde la caja. "
         . "- Multi-Caja (cajas.php): Habilitación de cajas registradoras físicas (Caja 01, Caja 02). "
         . "- Mantenedores -> Imprimir Códigos A4 (imprimir_codigos_a4.php): Módulo especializado para imprimir en hoja estándar A4. Modo Pliego de Etiquetas (stickers recortables de 1 producto o pliego mixto con 1 de cada código interno), Modo Carta de Mostrador (catálogo escaneable organizado por categorías para mesón de caja), selector de 2/3/4 columnas, filtro ⭐ 'Solo Internos', selector de zoom y líneas de corte punteadas. "
@@ -702,6 +815,14 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
         . "- Reportes -> Inventario Valorizado (reportes.php?tab=inventario): Detalle a costo y venta, identificación de artículos sin costo (S/C) y Excel. "
         . "- Configuración (configuracion.php): Logo, datos del local, tema oscuro/claro, boleta SII/DTE (OpenFactura, Haulmer, Mock, Comprobante Local), políticas de supervisión de caja (clave supervisor al cancelar o descontar), impresora térmica directa (POSBANK A11 Prime 80mm) y Asistente de IA. "
         . "- Administración -> Usuarios y Permisos (usuarios.php): Roles Administrador, Supervisor y Cajero, con clave de supervisor para autorizaciones especiales en caja y cierres de turno. "
+        . "REGLA OBLIGATORIA PARA CONSULTAS SOBRE 'CUÁNTO VENDÍ', 'VENTAS DE HOY' O 'CÓMO SÉ CUÁNTO VENDÍ': "
+        . "1. RESPONDE DE INMEDIATO con la cifra real acumulada del día usando los DATOS EN TIEMPO REAL DEL SISTEMA HOY inyectados arriba (ejemplo: 'Hoy llevas vendido \$X CLP en N ventas completadas'). Si lleva \$0, acláralo amablemente. "
+        . "2. Explica de forma concisa y directa los accesos principales del sistema para consultarlo: "
+        . "   * Opción instantánea: En el Panel de Inicio (Dashboard / index.php), en la tarjeta principal 'Ventas del Día'. "
+        . "   * Para revisar cada boleta o comprobante: En Caja y Ventas -> Ventas y Comprobantes (ventas.php). "
+        . "   * Para gráficos por hora y medios de pago: En Reportes -> Ventas y Medios de Pago (reportes.php?tab=ventas) seleccionando 'Hoy'. "
+        . "   * Si solo quiere su turno en caja: En Caja y Ventas -> Turnos y Arqueo (caja.php). "
+        . "PROHIBICIÓN ESTRICTA: NUNCA le digas al usuario que debe hacer un arqueo ciego o generar un Cierre Z solo para saber cuánto vendió; el arqueo ciego y el Cierre Z son exclusivamente para cerrar turno o auditoría fiscal final. "
         . "FUNCIONES QUE EL SISTEMA NO POSEE (DEBES DECLARAR CON HONESTIDAD QUE NO EXISTEN): "
         . "1. WhatsApp en cotizaciones o ventas: NO existe botón de envío por WhatsApp ni PDF. Aclara que se consulta en pantalla o se pasa 'A la caja'. "
         . "2. Pago de sueldos o nóminas: NO existe módulo de nóminas ni recursos humanos. Sugiere registrar 'Retiro de Caja' con motivo. "
@@ -721,7 +842,7 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
             [
                 'role' => 'user',
                 'parts' => [
-                    ['text' => $systemInstruction . "\n\nPregunta del usuario: " . $pregunta]
+                    ['text' => $systemInstruction . "\n\n" . $liveDataPrompt . "Pregunta del usuario: " . $pregunta]
                 ]
             ]
         ],
