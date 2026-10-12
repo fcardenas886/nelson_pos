@@ -1,10 +1,16 @@
 <?php
 // Version de la app: unica fuente de verdad, para que login y footer nunca queden desincronizados.
-define('APP_VERSION', 'v4.7.3');
+define('APP_VERSION', 'v4.7.4');
 
 // Novedades reales por versión, para la pantalla de bienvenida y el módulo "Acerca de".
 // Registra la cronología completa de la evolución del sistema desde su inicio.
 define('APP_CHANGELOG', [
+    'v4.7.4' => [
+        'Optimización Ergonómica de Impresión A4: Reorganización horizontal en 2 columnas del panel lateral para que todas las opciones quepan 100% en pantalla sin scroll vertical.',
+        'Preservación de Diseño Original: Mantenimiento de tarjetas con iconos, títulos y descripciones explicativas completas en el selector de modo y origen.',
+        'Ajuste de Previsualización y Zoom: Escala inicial de la hoja A4 calibrada a 70% (147 mm de ancho) con botones rápidos de zoom (60%, 70%, 80%, 100%) para una vista equilibrada y cómoda en pantalla.',
+        'Pliego Mixto de Códigos Internos: Distribución equitativa de todos los productos internos del local (EAN-8 / PLU) en una sola hoja A4 para optimizar el uso de papel.',
+    ],
     'v4.7.3' => [
         'Módulo de Impresión de Códigos de Barra en Hoja A4: Nueva herramienta especializada para generar e imprimir códigos en papel estándar de oficina A4.',
         'Modo Pliego de Etiquetas A4: Generación de pliegos de stickers recortables o papel autoadhesivo para 1 o varios productos (12, 24, 30 o cantidad personalizada) con líneas de corte punteadas.',
