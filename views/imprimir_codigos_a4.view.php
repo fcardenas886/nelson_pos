@@ -20,15 +20,15 @@
         <button type="button" class="a4-mode-btn active" id="btnModoPliego" onclick="cambiarModo('pliego')">
           <i class="fa-solid fa-tags"></i>
           <div>
-            <strong>Pliego de Etiquetas</strong>
-            <small>Stickers adhesivos o recortables</small>
+            <strong>Pliego</strong>
+            <small>Stickers / Planchas</small>
           </div>
         </button>
         <button type="button" class="a4-mode-btn" id="btnModoCatalogo" onclick="cambiarModo('catalogo')">
           <i class="fa-solid fa-clipboard-list"></i>
           <div>
-            <strong>Carta de Mostrador</strong>
-            <small>Catálogo escaneable para caja</small>
+            <strong>Carta Mostrador</strong>
+            <small>Catálogo escaneable</small>
           </div>
         </button>
       </div>
@@ -45,7 +45,7 @@
           <i class="fa-solid fa-star"></i> Solo Internos
         </button>
       </div>
-      <small id="txtDescFiltroTipo" style="display: block; color: var(--text-muted); font-size: 0.72rem; margin-top: 0.4rem; line-height: 1.3;">
+      <small id="txtDescFiltroTipo" style="display: block; color: var(--text-muted); font-size: 0.72rem; margin-top: 0.35rem; line-height: 1.25;">
         Mostrando todos los productos del catálogo.
       </small>
     </div>
@@ -54,8 +54,8 @@
     <div id="panelModoPliego" class="a4-section">
       <label class="a4-section-title">SELECCIÓN DE PRODUCTO</label>
       
-      <div style="margin-bottom: 0.75rem;">
-        <select id="selectProductoPliego" class="form-control" onchange="seleccionarProductoPliego()" style="font-size: 0.88rem;">
+      <div style="margin-bottom: 0.65rem;">
+        <select id="selectProductoPliego" class="form-control" onchange="seleccionarProductoPliego()" style="font-size: 0.85rem;">
           <option value="">-- Elige un producto --</option>
           <?php foreach ($todosProductos as $prod): ?>
             <option value="<?= $prod['ProductoID'] ?>" 
@@ -70,8 +70,8 @@
           <?php endforeach; ?>
         </select>
 
-        <div id="btnPliegoMixtoWrap" style="margin-top: 0.5rem; display: none;">
-          <button type="button" class="btn btn-secondary btn-sm btn-block" id="btnPliegoMixto" onclick="togglePliegoMixtoInternos()" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 600; font-size: 0.78rem;">
+        <div id="btnPliegoMixtoWrap" style="margin-top: 0.45rem; display: none;">
+          <button type="button" class="btn btn-secondary btn-sm btn-block" id="btnPliegoMixto" onclick="togglePliegoMixtoInternos()" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 600; font-size: 0.76rem;">
             <i class="fa-solid fa-layer-group"></i> Llenar pliego con todos los internos (1 de c/u)
           </button>
         </div>
@@ -79,37 +79,42 @@
 
       <label class="a4-section-title">CANTIDAD DE ETIQUETAS</label>
       <div class="a4-cant-chips">
-        <button type="button" class="btn btn-secondary btn-sm" onclick="setCantidadPliego(12)">12 (½ Hoja)</button>
-        <button type="button" class="btn btn-secondary btn-sm active" id="btnCant24" onclick="setCantidadPliego(24)">24 (Hoja A4)</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="setCantidadPliego(12)">12 (½ H)</button>
+        <button type="button" class="btn btn-secondary btn-sm active" id="btnCant24" onclick="setCantidadPliego(24)">24 (Hoja)</button>
         <button type="button" class="btn btn-secondary btn-sm" onclick="setCantidadPliego(30)">30 (3x10)</button>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="setCantidadPliego(48)">48 (2 Hojas)</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="setCantidadPliego(48)">48 (2 H)</button>
       </div>
       
-      <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-        <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Personalizada:</label>
-        <input type="number" id="inputCantidadCustom" class="form-control" value="24" min="1" max="120" style="width: 80px; padding: 0.35rem 0.6rem; text-align: center;" onchange="actualizarCantidadCustom()">
-        <span style="font-size: 0.8rem; color: var(--text-muted);">etiquetas</span>
+      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; margin-top: 0.4rem;">
+        <label style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">Personalizada:</label>
+        <input type="number" id="inputCantidadCustom" class="form-control" value="24" min="1" max="120" style="width: 75px; padding: 0.25rem 0.5rem; text-align: center; font-size: 0.85rem;" onchange="actualizarCantidadCustom()">
+        <span style="font-size: 0.78rem; color: var(--text-muted);">etiquetas</span>
       </div>
     </div>
 
     <!-- CONTROLES ESPECÍFICOS: MODO CATÁLOGO / CARTA -->
     <div id="panelModoCatalogo" class="a4-section" style="display: none;">
-      <label class="a4-section-title">FILTRAR POR CATEGORÍA</label>
-      <select id="selectCategoriaCatalogo" class="form-control" onchange="filtrarCategoriaCatalogo()" style="font-size: 0.88rem; margin-bottom: 0.75rem;">
-        <option value="todas">Todas las categorías</option>
-        <?php foreach ($categorias as $c): ?>
-          <option value="<?= $c['CategoriaID'] ?>" <?= ($preselectedCat === (int)$c['CategoriaID']) ? 'selected' : '' ?>>
-            <?= htmlspecialchars($c['Nombre']) ?>
-          </option>
-        <?php endforeach; ?>
-      </select>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
+        <div>
+          <label class="a4-section-title" style="margin-bottom: 0.35rem;">CATEGORÍA</label>
+          <select id="selectCategoriaCatalogo" class="form-control" onchange="filtrarCategoriaCatalogo()" style="font-size: 0.84rem;">
+            <option value="todas">Todas</option>
+            <?php foreach ($categorias as $c): ?>
+              <option value="<?= $c['CategoriaID'] ?>" <?= ($preselectedCat === (int)$c['CategoriaID']) ? 'selected' : '' ?>>
+                <?= htmlspecialchars($c['Nombre']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div>
+          <label class="a4-section-title" style="margin-bottom: 0.35rem;">BUSCAR</label>
+          <input type="text" id="inputBusquedaCatalogo" class="form-control" placeholder="Filtrar..." oninput="filtrarTextoCatalogo()" style="font-size: 0.84rem;">
+        </div>
+      </div>
 
-      <label class="a4-section-title">BUSCAR EN LISTA</label>
-      <input type="text" id="inputBusquedaCatalogo" class="form-control" placeholder="Escribe para buscar..." oninput="filtrarTextoCatalogo()" style="font-size: 0.85rem; margin-bottom: 0.75rem;">
-
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-        <span id="txtTotalItemsCatalogo" style="font-size: 0.8rem; color: var(--text-muted);">0 productos visibles</span>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleSeleccionarTodos()" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+        <span id="txtTotalItemsCatalogo" style="font-size: 0.76rem; color: var(--text-muted);">0 productos visibles</span>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleSeleccionarTodos()" style="padding: 0.15rem 0.45rem; font-size: 0.72rem;">
           Invertir selección
         </button>
       </div>
@@ -121,7 +126,7 @@
 
     <!-- CONFIGURACIÓN VISUAL COMÚN -->
     <div class="a4-section">
-      <label class="a4-section-title">OPCIONES DE DISEÑO</label>
+      <label class="a4-section-title">OPCIONES DE DISEÑO Y COLUMNAS</label>
       
       <div class="a4-opt-grid">
         <label class="a4-checkbox-row">
@@ -130,17 +135,17 @@
         </label>
         <label class="a4-checkbox-row">
           <input type="checkbox" id="chkMostrarEmpresa" checked onchange="regenerarVistaA4()">
-          <span>Mostrar Nombre del Local</span>
+          <span>Nombre del Local</span>
         </label>
-        <label class="a4-checkbox-row">
+        <label class="a4-checkbox-row" style="grid-column: span 2;">
           <input type="checkbox" id="chkLineasCorte" checked onchange="regenerarVistaA4()">
           <span>Líneas de corte punteadas</span>
         </label>
       </div>
 
-      <div style="margin-top: 0.85rem;">
-        <label style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">COLUMNAS POR HOJA</label>
-        <div class="a4-cant-chips">
+      <div style="margin-top: 0.65rem; padding-top: 0.65rem; border-top: 1px dashed rgba(255, 255, 255, 0.1);">
+        <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 0.35rem;">COLUMNAS POR HOJA</label>
+        <div class="a4-cols-chips">
           <button type="button" class="btn btn-secondary btn-sm" id="btnCol2" onclick="setColumnasA4(2)">2 Columnas</button>
           <button type="button" class="btn btn-secondary btn-sm active" id="btnCol3" onclick="setColumnasA4(3)">3 Columnas (Recomendado)</button>
           <button type="button" class="btn btn-secondary btn-sm" id="btnCol4" onclick="setColumnasA4(4)">4 Columnas</button>
@@ -149,11 +154,11 @@
     </div>
 
     <!-- BOTÓN DE IMPRESIÓN DIRECTA -->
-    <div style="margin-top: auto; padding-top: 1rem;">
+    <div style="margin-top: auto; padding-top: 0.5rem;">
       <button type="button" onclick="imprimirHojaA4()" class="btn btn-primary btn-block a4-btn-print">
         <i class="fa-solid fa-print"></i> IMPRIMIR HOJA A4
       </button>
-      <small style="display: block; text-align: center; color: var(--text-muted); font-size: 0.72rem; margin-top: 0.4rem;">
+      <small style="display: block; text-align: center; color: var(--text-muted); font-size: 0.72rem; margin-top: 0.35rem;">
         Atajo: <kbd>Ctrl + P</kbd> · Configura escala 100% y tamaño A4
       </small>
     </div>
@@ -164,11 +169,19 @@
   <main class="a4-preview-viewport">
     
     <div class="a4-preview-toolbar">
-      <span id="badgePaginasA4" class="badge badge-info" style="font-size: 0.8rem; padding: 0.3rem 0.7rem;">
-        <i class="fa-regular fa-file"></i> Previsualización A4 (1 página)
-      </span>
-      <div style="color: var(--text-muted); font-size: 0.8rem;">
-        <i class="fa-solid fa-circle-info"></i> Compatible con papel normal A4 y hojas de etiquetas adhesivas
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span id="badgePaginasA4" class="badge badge-info" style="font-size: 0.78rem; padding: 0.3rem 0.65rem;">
+          <i class="fa-regular fa-file"></i> Previsualización A4 (1 página)
+        </span>
+      </div>
+
+      <!-- Controles de Zoom para achicar o agrandar la hoja en pantalla -->
+      <div class="a4-zoom-toolbar">
+        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;"><i class="fa-solid fa-magnifying-glass"></i> Zoom:</span>
+        <button type="button" class="btn btn-secondary btn-sm a4-zoom-btn" id="btnZoom70" onclick="setZoomA4(0.70)">70%</button>
+        <button type="button" class="btn btn-secondary btn-sm a4-zoom-btn active" id="btnZoom80" onclick="setZoomA4(0.80)">80%</button>
+        <button type="button" class="btn btn-secondary btn-sm a4-zoom-btn" id="btnZoom90" onclick="setZoomA4(0.90)">90%</button>
+        <button type="button" class="btn btn-secondary btn-sm a4-zoom-btn" id="btnZoom100" onclick="setZoomA4(1.00)">100%</button>
       </div>
     </div>
 
@@ -214,6 +227,10 @@
 /* ============================================================== */
 /* ESTILOS DE LA INTERFAZ EN PANTALLA                             */
 /* ============================================================== */
+:root {
+  --a4-zoom: 0.80;
+}
+
 .a4-page-container {
   display: flex;
   min-height: calc(100vh - 70px);
@@ -222,13 +239,13 @@
 }
 
 .a4-sidebar {
-  width: 360px;
+  width: 440px;
   background: #0f172a;
   border-right: 1px solid var(--border-dark);
-  padding: 1.25rem;
+  padding: 1rem 1.15rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0.75rem;
   flex-shrink: 0;
   max-height: calc(100vh - 70px);
   overflow-y: auto;
@@ -239,14 +256,14 @@
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--border-dark);
-  padding-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
 }
 
 .a4-section {
   background: rgba(30, 41, 59, 0.4);
   border: 1px solid var(--border-dark);
-  border-radius: 10px;
-  padding: 0.9rem;
+  border-radius: 9px;
+  padding: 0.75rem 0.85rem;
 }
 
 .a4-section-title {
@@ -255,21 +272,21 @@
   font-weight: 800;
   letter-spacing: 0.05em;
   color: #94a3b8;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
   text-transform: uppercase;
 }
 
 .a4-mode-selector {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
 }
 
 .a4-mode-btn {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 0.85rem;
+  gap: 0.55rem;
+  padding: 0.55rem 0.65rem;
   background: rgba(15, 23, 42, 0.6);
   border: 2px solid var(--border-dark);
   border-radius: 8px;
@@ -280,20 +297,22 @@
 }
 
 .a4-mode-btn i {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   color: #64748b;
 }
 
 .a4-mode-btn strong {
   display: block;
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   color: #fff;
+  line-height: 1.2;
 }
 
 .a4-mode-btn small {
   display: block;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: #94a3b8;
+  line-height: 1.2;
 }
 
 .a4-mode-btn.active {
@@ -306,9 +325,9 @@
 }
 
 .a4-cant-chips {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.35rem;
 }
 
 .a4-cant-chips .btn.active {
@@ -317,17 +336,29 @@
   border-color: var(--primary) !important;
 }
 
+.a4-cols-chips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+}
+
+.a4-cols-chips .btn.active {
+  background: var(--primary) !important;
+  color: #fff !important;
+  border-color: var(--primary) !important;
+}
+
 .a4-opt-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 0.6rem;
 }
 
 .a4-checkbox-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.82rem;
+  gap: 0.45rem;
+  font-size: 0.8rem;
   color: #e2e8f0;
   cursor: pointer;
   margin: 0;
@@ -335,24 +366,24 @@
 }
 
 .a4-checklist {
-  max-height: 220px;
+  max-height: 200px;
   overflow-y: auto;
   border: 1px solid var(--border-dark);
   border-radius: 8px;
   background: rgba(15, 23, 42, 0.7);
-  padding: 0.4rem;
+  padding: 0.35rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.2rem;
 }
 
 .a4-check-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.5rem;
+  gap: 0.45rem;
+  padding: 0.3rem 0.45rem;
   border-radius: 6px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: #e2e8f0;
   cursor: pointer;
   transition: background 0.15s;
@@ -367,8 +398,8 @@
 }
 
 .a4-btn-print {
-  padding: 0.85rem;
-  font-size: 1rem;
+  padding: 0.75rem;
+  font-size: 0.95rem;
   font-weight: 800;
   background: #10b981;
   border-color: #10b981;
@@ -384,20 +415,43 @@
 /* Área de Previsualización */
 .a4-preview-viewport {
   flex: 1;
-  padding: 1.5rem;
+  padding: 1.25rem;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .a4-preview-toolbar {
   width: 100%;
-  max-width: 210mm;
+  max-width: calc(210mm * var(--a4-zoom, 0.80));
   display: flex;
   align-items: center;
   justify-content: space-between;
+  transition: max-width 0.15s ease;
+}
+
+.a4-zoom-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-dark);
+  padding: 0.18rem 0.4rem;
+  border-radius: 6px;
+}
+
+.a4-zoom-btn {
+  padding: 0.16rem 0.45rem !important;
+  font-size: 0.72rem !important;
+  line-height: 1.2 !important;
+}
+
+.a4-zoom-btn.active {
+  background: var(--primary) !important;
+  color: #ffffff !important;
+  border-color: var(--primary) !important;
 }
 
 /* ============================================================== */
@@ -414,6 +468,9 @@
   border-radius: 3px;
   position: relative;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  zoom: var(--a4-zoom, 0.80);
+  transform-origin: top center;
+  transition: zoom 0.15s ease;
 }
 
 /* Cabecera de Catálogo */
@@ -577,6 +634,8 @@
   .a4-sheet {
     width: 100% !important;
     min-height: 0 !important;
+    zoom: 1 !important;
+    transform: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     padding: 0 !important;
@@ -1059,6 +1118,15 @@ function actualizarBadgePaginas(totalItems) {
   const itemsPorPagina = columnasActuales * 8; // ~24 en 3 cols, ~16 en 2 cols, ~32 en 4 cols
   const pags = Math.ceil(totalItems / itemsPorPagina);
   badge.innerHTML = `<i class="fa-regular fa-file"></i> ${totalItems} etiquetas (aprox. ${pags} ${pags === 1 ? 'página A4' : 'páginas A4'})`;
+}
+
+function setZoomA4(val) {
+  document.documentElement.style.setProperty('--a4-zoom', val);
+  const toolbar = document.querySelector('.a4-preview-toolbar');
+  if (toolbar) toolbar.style.maxWidth = `calc(210mm * ${val})`;
+  document.querySelectorAll('.a4-zoom-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('btnZoom' + Math.round(val * 100));
+  if (btn) btn.classList.add('active');
 }
 
 function imprimirHojaA4() {
