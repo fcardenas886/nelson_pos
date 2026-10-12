@@ -647,6 +647,11 @@
       </div>
 
       <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+        <?php if (!empty($kpiInventario['ProductosSinCosto']) && $kpiInventario['ProductosSinCosto'] > 0): ?>
+          <a href="actualizar_precios.php?filtro=sin_costo" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; color: #fbbf24; border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.1); font-weight: 700;" title="Abrir actualizador rápido con todos los productos sin costo cargados">
+            <i class="fa-solid fa-triangle-exclamation"></i> Resolver <?= $kpiInventario['ProductosSinCosto'] ?> Sin Costo
+          </a>
+        <?php endif; ?>
         <a href="actualizar_precios.php" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">
           <i class="fa-solid fa-bolt"></i> Actualizador Rápido Precios/Costos
         </a>

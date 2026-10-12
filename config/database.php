@@ -15,6 +15,7 @@ define('APP_CHANGELOG', [
         'Tratamiento Honesto de Funciones Ausentes: Si una función no está disponible en el sistema, lo declara con franqueza y ofrece la alternativa práctica real.',
         'Diagnóstico en Configuración y Discreción: Panel para probar la API Key de Gemini en tiempo real e indicador visual sutil en el chat.',
         'Corrección de Historial en Caja: Visualización restaurada del historial de aperturas y cierres en el módulo de Turnos y Arqueo.',
+        'Estimador Rápido de Costos por Margen: Herramienta en lote dentro del Actualizador de Precios para cargar productos sin costo ($0) y calcular costos automáticamente según el margen deseado (Mark-up o comercial).',
     ],
     'v4.8.0' => [
         'Módulo de Impresión de Códigos de Barra en Hoja A4: Sistema integral para generar pliegos de stickers recortables y catálogos de mostrador en papel estándar de oficina A4.',

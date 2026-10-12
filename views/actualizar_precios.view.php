@@ -26,7 +26,7 @@
 
 <!-- Scanner and Bulk Controls Card -->
 <div style="background: var(--card-bg); border: 1px solid var(--border-dark); border-radius: 16px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
-  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; align-items: center;">
+  <div style="display: grid; grid-template-columns: 2fr 1.3fr auto; gap: 0.85rem; align-items: center;">
     
     <!-- Big Scanner Input -->
     <div style="position: relative;">
@@ -46,8 +46,19 @@
           <option value="<?= $cat['CategoriaID'] ?>"><?= htmlspecialchars($cat['Nombre']) ?></option>
         <?php endforeach; ?>
       </select>
-      <button type="button" onclick="cargarPorCategoria()" class="btn btn-primary" style="height: 52px; padding: 0 1.25rem; border-radius: 12px; white-space: nowrap;">
+      <button type="button" onclick="cargarPorCategoria()" class="btn btn-primary" style="height: 52px; padding: 0 1.15rem; border-radius: 12px; white-space: nowrap;">
         <i class="fa-solid fa-folder-open"></i> Cargar
+      </button>
+    </div>
+
+    <!-- Cargar Productos Sin Costo -->
+    <div>
+      <button type="button" onclick="cargarProductosSinCosto()" id="btnCargarSinCosto" class="btn btn-secondary" 
+              style="height: 52px; padding: 0 1.2rem; border-radius: 12px; white-space: nowrap; border-color: rgba(245, 158, 11, 0.45); color: #fbbf24; background: rgba(245, 158, 11, 0.08); font-weight: 700; display: flex; align-items: center; gap: 0.5rem;"
+              title="Cargar todos los productos que no tienen costo asignado ($0 o S/C)">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Sin Costo ($0)</span>
+        <span class="badge" id="badgeSinCostoCount" style="background: #f59e0b; color: #000; font-weight: 800; font-size: 0.78rem; padding: 0.2rem 0.55rem; border-radius: 6px;"><?= $totalSinCosto ?></span>
       </button>
     </div>
 
@@ -60,6 +71,11 @@
       <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">
         <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary);"></i> Acciones en Lote:
       </span>
+      <button type="button" onclick="abrirModalEstimarCostos()" class="btn btn-primary" 
+              style="padding: 0.35rem 0.85rem; font-size: 0.82rem; background: linear-gradient(135deg, #0284c7, #0369a1); border: none; font-weight: 700; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35); display: flex; align-items: center; gap: 0.4rem;"
+              title="Calcular costos estimados en lote según precio de venta y margen deseado">
+        <i class="fa-solid fa-calculator"></i> 🎯 Estimar Costos por Margen %
+      </button>
       <button type="button" onclick="aplicarPorcentaje(5)" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">
         +5% Venta
       </button>
@@ -151,6 +167,129 @@
     <button type="button" onclick="guardarTodosLosPrecios()" id="btnGuardarBottom" class="btn btn-success" style="padding: 0.65rem 1.75rem; font-size: 0.95rem; font-weight: 700;" disabled>
       <i class="fa-solid fa-floppy-disk"></i> Guardar Todos los Cambios (F10)
     </button>
+  </div>
+</div>
+
+<!-- Modal Estimar Precio de Costo según Margen de Venta -->
+<div id="modalEstimarCostos" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; padding: 1rem;">
+  <div style="background: var(--card-bg); border: 1px solid var(--border-dark); border-radius: 16px; width: 100%; max-width: 580px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow-lg);">
+    
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-dark); display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-calculator" style="color: #38bdf8;"></i> Estimar Precio Costo según Margen
+        </h3>
+        <span style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; display: block;">
+          Calcula y autocompleta el costo de compra en base al precio de venta actual.
+        </span>
+      </div>
+      <button type="button" onclick="cerrarModalEstimarCostos()" style="background: none; border: none; font-size: 1.3rem; color: var(--text-muted); cursor: pointer;">&times;</button>
+    </div>
+
+    <div style="padding: 1.25rem 1.5rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 1.25rem;">
+      
+      <!-- 1. Margen de Ganancia Deseado -->
+      <div>
+        <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 0.4rem;">
+          1. Margen de Ganancia Deseado (%)
+        </label>
+        <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+          <div style="position: relative; width: 140px;">
+            <input type="number" id="estimarMargenPorc" value="30" min="1" max="500" step="1"
+                   class="form-control" style="font-size: 1.1rem; font-weight: 800; text-align: center; height: 42px; border-radius: 10px;"
+                   oninput="actualizarPreviewEstimacion()">
+            <span style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); font-weight: 800; color: var(--text-muted);">%</span>
+          </div>
+          <!-- Chips Rápidos -->
+          <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+            <button type="button" onclick="setMargenChip(20)" class="btn btn-secondary" style="padding: 0.35rem 0.6rem; font-size: 0.78rem;">20%</button>
+            <button type="button" onclick="setMargenChip(25)" class="btn btn-secondary" style="padding: 0.35rem 0.6rem; font-size: 0.78rem;">25%</button>
+            <button type="button" onclick="setMargenChip(30)" class="btn btn-secondary" style="padding: 0.35rem 0.6rem; font-size: 0.78rem; font-weight: 700; color: #38bdf8; border-color: rgba(56,189,248,0.4);">30%</button>
+            <button type="button" onclick="setMargenChip(35)" class="btn btn-secondary" style="padding: 0.35rem 0.6rem; font-size: 0.78rem;">35%</button>
+            <button type="button" onclick="setMargenChip(40)" class="btn btn-secondary" style="padding: 0.35rem 0.6rem; font-size: 0.78rem;">40%</button>
+            <button type="button" onclick="setMargenChip(50)" class="btn btn-secondary" style="padding: 0.35rem 0.6rem; font-size: 0.78rem;">50%</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Método de Cálculo -->
+      <div>
+        <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 0.4rem;">
+          2. Método de Cálculo de Margen
+        </label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
+          <label style="border: 1px solid var(--border-dark); border-radius: 10px; padding: 0.75rem 0.85rem; cursor: pointer; display: flex; gap: 0.6rem; align-items: flex-start; background: rgba(255,255,255,0.02);">
+            <input type="radio" name="metodoCalculoCosto" value="markup" checked onchange="actualizarPreviewEstimacion()" style="margin-top: 0.2rem;">
+            <div>
+              <strong style="font-size: 0.85rem; color: #fff; display: block;">Sobre Costo (Mark-up POS)</strong>
+              <small style="color: var(--text-muted); font-size: 0.74rem; line-height: 1.25; display: block; margin-top: 0.15rem;">
+                Costo = Venta ÷ (1 + Margen%). Estándar de utilidades del sistema.
+              </small>
+            </div>
+          </label>
+          <label style="border: 1px solid var(--border-dark); border-radius: 10px; padding: 0.75rem 0.85rem; cursor: pointer; display: flex; gap: 0.6rem; align-items: flex-start; background: rgba(255,255,255,0.02);">
+            <input type="radio" name="metodoCalculoCosto" value="sobre_venta" onchange="actualizarPreviewEstimacion()" style="margin-top: 0.2rem;">
+            <div>
+              <strong style="font-size: 0.85rem; color: #fff; display: block;">Sobre Venta (Comercial)</strong>
+              <small style="color: var(--text-muted); font-size: 0.74rem; line-height: 1.25; display: block; margin-top: 0.15rem;">
+                Costo = Venta × (1 - Margen%). Ganancia directa sobre precio final.
+              </small>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- 3. Ámbito de Aplicación -->
+      <div>
+        <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 0.4rem;">
+          3. ¿A qué productos aplicar?
+        </label>
+        <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+          <label style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--text-main); cursor: pointer;">
+            <input type="radio" name="ambitoEstimacion" value="solo_sin_costo" checked style="width: 16px; height: 16px;">
+            <span><strong>Solo productos sin costo</strong> (Costo actual $0) <em style="color: #34d399; font-style: normal;">— Recomendado, protege costos ya cargados</em></span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--text-main); cursor: pointer;">
+            <input type="radio" name="ambitoEstimacion" value="todos" style="width: 16px; height: 16px;">
+            <span><strong>Todos los productos en la lista actual</strong> (Sobrescribe costos existentes)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 4. Redondeo del Costo -->
+      <div>
+        <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 0.4rem;">
+          4. Redondeo del Costo Calculado
+        </label>
+        <select id="selectRedondeoCosto" class="form-control" style="font-size: 0.85rem;" onchange="actualizarPreviewEstimacion()">
+          <option value="10" selected>Redondear a $10 más cercano (Ej: $769 → $770)</option>
+          <option value="50">Redondear a $50 más cercano (Ej: $769 → $750)</option>
+          <option value="100">Redondear a $100 más cercano (Ej: $769 → $800)</option>
+          <option value="1">Sin redondeo (Al peso exacto, Ej: $769)</option>
+        </select>
+      </div>
+
+      <!-- Caja de Previsualización en Vivo -->
+      <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 0.85rem 1rem;">
+        <div style="font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: #38bdf8; margin-bottom: 0.25rem;">
+          <i class="fa-solid fa-eye"></i> Simulación en Tiempo Real
+        </div>
+        <div id="previewEstimacionTxt" style="font-size: 0.88rem; color: #fff; font-weight: 600;">
+          <!-- Se actualiza por JS -->
+        </div>
+      </div>
+
+    </div>
+
+    <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-dark); display: flex; justify-content: space-between; align-items: center; background: var(--bg-dark);">
+      <button type="button" onclick="cerrarModalEstimarCostos()" class="btn btn-secondary">
+        Cancelar
+      </button>
+      <button type="button" onclick="aplicarEstimacionCostos()" class="btn btn-success" style="padding: 0.55rem 1.35rem; font-weight: 700;">
+        <i class="fa-solid fa-check"></i> Aplicar Costos a la Lista
+      </button>
+    </div>
+
   </div>
 </div>
 
@@ -350,6 +489,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     debounceTimer = setTimeout(() => buscarDropdown(q), 220);
   });
+
+  // Si se ingresó con parámetro ?filtro=sin_costo (ej. desde el Centro de Reportes), cargar de inmediato
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('filtro') === 'sin_costo') {
+    cargarProductosSinCosto();
+  }
 });
 
 async function buscarDropdown(q) {
@@ -432,6 +577,33 @@ async function cargarPorCategoria() {
     renderBatchTable();
   } catch (e) {
     mostrarAlerta('error', 'Error al cargar categoría: ' + e.message);
+  }
+}
+
+async function cargarProductosSinCosto() {
+  mostrarAlerta('info', '<i class="fa-solid fa-spinner fa-spin"></i> Cargando productos sin costo asignado ($0 o S/C)...');
+
+  try {
+    const res = await fetch('api/buscar_producto.php?filtro=sin_costo');
+    const data = await res.json();
+
+    if (!data.success || !data.productos || data.productos.length === 0) {
+      mostrarAlerta('success', '¡Excelente! No hay productos con costo $0 en el catálogo.');
+      return;
+    }
+
+    let agregados = 0;
+    for (const p of data.productos) {
+      if (!batchItems.some(i => i.ProductoID === p.ProductoID)) {
+        await agregarItemABatch(p, false);
+        agregados++;
+      }
+    }
+
+    mostrarAlerta('success', `<i class="fa-solid fa-check"></i> Se cargaron <strong>${agregados} productos sin costo</strong> a la lista de edición. Puedes usar <em>🎯 Estimar Costos por Margen %</em> para completarlos.`);
+    renderBatchTable();
+  } catch (e) {
+    mostrarAlerta('error', 'Error al cargar productos sin costo: ' + e.message);
   }
 }
 
@@ -742,6 +914,88 @@ function redondearPrecios(base) {
   });
   renderBatchTable();
   mostrarAlerta('success', `Precios redondeados a múltiplos de $${base}.`);
+}
+
+// ==============================================================
+// ASISTENTE DE ESTIMACIÓN DE COSTOS POR MARGEN
+// ==============================================================
+function abrirModalEstimarCostos() {
+  if (batchItems.length === 0) {
+    mostrarAlerta('error', 'La lista de edición está vacía. Escanea productos o presiona "Sin Costo ($0)" arriba primero.');
+    return;
+  }
+  document.getElementById('modalEstimarCostos').style.display = 'flex';
+  actualizarPreviewEstimacion();
+}
+
+function cerrarModalEstimarCostos() {
+  document.getElementById('modalEstimarCostos').style.display = 'none';
+}
+
+function setMargenChip(pct) {
+  document.getElementById('estimarMargenPorc').value = pct;
+  actualizarPreviewEstimacion();
+}
+
+function calcularCostoEstimado(precioVenta, margenPct, metodo, redondeoBase) {
+  if (!precioVenta || precioVenta <= 0) return 0;
+  let costo = 0;
+  if (metodo === 'sobre_venta') {
+    // Margen sobre venta: Ganancia = Venta * (Margen/100) -> Costo = Venta * (1 - Margen/100)
+    costo = precioVenta * (1 - (margenPct / 100));
+  } else {
+    // Mark-up sobre costo: Venta = Costo * (1 + Margen/100) -> Costo = Venta / (1 + Margen/100)
+    costo = precioVenta / (1 + (margenPct / 100));
+  }
+  costo = Math.max(0, costo);
+  if (redondeoBase > 1) {
+    costo = Math.round(costo / redondeoBase) * redondeoBase;
+  } else {
+    costo = Math.round(costo);
+  }
+  return costo;
+}
+
+function actualizarPreviewEstimacion() {
+  const pct = parseFloat(document.getElementById('estimarMargenPorc').value) || 30;
+  const metodo = document.querySelector('input[name="metodoCalculoCosto"]:checked')?.value || 'markup';
+  const redondeo = parseInt(document.getElementById('selectRedondeoCosto').value) || 10;
+  
+  const precioSim = 1000;
+  const costoSim = calcularCostoEstimado(precioSim, pct, metodo, redondeo);
+  const margenEfectivo = calcularMargen(precioSim, costoSim);
+  
+  const metodoLabel = metodo === 'sobre_venta' ? 'sobre venta (comercial)' : 'sobre costo (mark-up)';
+  const box = document.getElementById('previewEstimacionTxt');
+  if (box) {
+    box.innerHTML = `Para un producto vendido a <strong>$${formatNum(precioSim)}</strong> con <strong>${pct}%</strong> de margen ${metodoLabel}:<br>
+    Costo estimado = <span style="color: #34d399; font-weight: 800; font-size: 1.05rem;">$${formatNum(costoSim)}</span> 
+    (Margen efectivo resultante: <span style="color: #38bdf8; font-weight: 700;">${margenEfectivo !== null ? (margenEfectivo >= 0 ? '+' : '') + margenEfectivo + '%' : 'S/C'}</span>)`;
+  }
+}
+
+function aplicarEstimacionCostos() {
+  if (batchItems.length === 0) return;
+  const pct = parseFloat(document.getElementById('estimarMargenPorc').value) || 30;
+  const metodo = document.querySelector('input[name="metodoCalculoCosto"]:checked')?.value || 'markup';
+  const ambito = document.querySelector('input[name="ambitoEstimacion"]:checked')?.value || 'solo_sin_costo';
+  const redondeo = parseInt(document.getElementById('selectRedondeoCosto').value) || 10;
+
+  let aplicados = 0;
+  batchItems.forEach(item => {
+    // Si se eligió "solo_sin_costo", solo modificar productos que tengan CostoOriginal = 0
+    if (ambito === 'solo_sin_costo' && item.CostoOriginal > 0) {
+      return;
+    }
+    const baseVenta = item.NuevoPrecio || item.PrecioOriginal;
+    const nuevoCostoCalc = calcularCostoEstimado(baseVenta, pct, metodo, redondeo);
+    item.NuevoCosto = nuevoCostoCalc;
+    aplicados++;
+  });
+
+  cerrarModalEstimarCostos();
+  renderBatchTable();
+  mostrarAlerta('success', `<i class="fa-solid fa-circle-check"></i> ¡Se calculó y aplicó costo estimado a <strong>${aplicados} productos</strong> (margen ${pct}%)! Recuerda presionar <strong>Guardar Cambios (F10)</strong> para confirmar.`);
 }
 
 // Modal de Packs
