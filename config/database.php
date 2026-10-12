@@ -1,10 +1,21 @@
 <?php
 // Version de la app: unica fuente de verdad, para que login y footer nunca queden desincronizados.
-define('APP_VERSION', 'v4.8.0');
+define('APP_VERSION', 'v4.9.0');
 
 // Novedades reales por versión, para la pantalla de bienvenida y el módulo "Acerca de".
 // Registra la cronología completa de la evolución del sistema desde su inicio.
 define('APP_CHANGELOG', [
+    'v4.9.0' => [
+        'Agente Asistente de IA Integrado (Tipo Chat): Asistente inteligente flotante en todas las pantallas para resolver dudas operativas y guiar en el uso del sistema (atajo Alt + I).',
+        'Diseño Compacto y Ergonómico: Ventana estilizada no invasiva (330x440px) y botón flotante discreto para operar en el POS sin obstaculizar la vista.',
+        'Lenguaje Natural y Cercano: Respuestas fluidas y humanas sin jerga técnica de archivos ni menciones innecesarias a Cierres Z para consultas del día a día.',
+        'Métricas del Día en Tiempo Real: Consulta instantánea con cifras reales de ventas acumuladas en CLP, cantidad de transacciones y estado del turno de caja.',
+        'Motor Dual Híbrido: Soporte oficial para API Keys 2026 de Google Gemini AI (modelos 3.5-flash y 3.8-flash) con respaldo automático (failover) en motor local offline con más de 35 guías estructuradas.',
+        'Guardrails Estrictos de Operación: Especializado exclusivamente en procedimientos del POS, declinando amablemente preguntas ajenas a la tienda.',
+        'Tratamiento Honesto de Funciones Ausentes: Si una función no está disponible en el sistema, lo declara con franqueza y ofrece la alternativa práctica real.',
+        'Diagnóstico en Configuración y Discreción: Panel para probar la API Key de Gemini en tiempo real e indicador visual sutil en el chat.',
+        'Corrección de Historial en Caja: Visualización restaurada del historial de aperturas y cierres en el módulo de Turnos y Arqueo.',
+    ],
     'v4.8.0' => [
         'Módulo de Impresión de Códigos de Barra en Hoja A4: Sistema integral para generar pliegos de stickers recortables y catálogos de mostrador en papel estándar de oficina A4.',
         'Diseño Ergonómico en 2 Columnas: Panel lateral ampliado a 580px con controles organizados en grilla horizontal para que todas las opciones quepan 100% en pantalla sin scroll vertical.',

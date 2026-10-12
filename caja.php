@@ -224,11 +224,13 @@ if ($turnoActivo) {
 
 // Historial de últimos turnos
 $stmtHist = $pdo->query("
-    SELECT t.*, u.Nombre AS Usuario 
+    SELECT t.*, u.Nombre AS Usuario, c.Nombre AS NombreCaja 
     FROM turnos t 
     JOIN usuarios u ON t.UsuarioID = u.UsuarioID 
-    ORDER BY t.TurnoID DESC LIMIT 10
+    LEFT JOIN cajas c ON t.CajaID = c.CajaID 
+    ORDER BY t.TurnoID DESC LIMIT 15
 ");
+$historialTurnos = $stmtHist ? $stmtHist->fetchAll() : [];
 // Cargar cajas activas disponibles
 $cajasDisponibles = $pdo->query("SELECT * FROM cajas WHERE Activa = 1 ORDER BY CajaID ASC")->fetchAll();
 if (empty($cajasDisponibles)) {
