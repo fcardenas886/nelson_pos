@@ -3,7 +3,10 @@
     <h1 style="font-size: 1.5rem; font-weight: 700;">Catálogo de Productos</h1>
     <p style="color: var(--text-muted); font-size: 0.9rem;">Gestión de precios, stock mínimo y códigos de barra</p>
   </div>
-  <div style="display: flex; gap: 0.6rem; align-items: center;">
+  <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+    <a href="imprimir_codigos_a4.php" class="btn btn-secondary" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); font-weight: 600;">
+      <i class="fa-solid fa-print"></i> Imprimir Códigos A4
+    </a>
     <a href="actualizar_precios.php" class="btn btn-secondary" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.35); font-weight: 600;">
       <i class="fa-solid fa-bolt"></i> Actualizador Rápido
     </a>
@@ -736,9 +739,12 @@ function escapeHtml(text) {
     </div>
 
     <!-- Footer -->
-    <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-dark); display: flex; justify-content: flex-end; gap: 0.5rem; background: var(--bg-dark);">
+    <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-dark); display: flex; justify-content: flex-end; gap: 0.5rem; background: var(--bg-dark); flex-wrap: wrap;">
       <button type="button" onclick="cerrarModalEtiqueta()" class="btn btn-secondary" style="padding: 0.5rem 1rem;">
         Cerrar
+      </button>
+      <button type="button" onclick="irAPliegoA4()" class="btn btn-secondary" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); padding: 0.5rem 1rem;" title="Generar pliego con múltiples etiquetas de este producto en hoja A4">
+        <i class="fa-solid fa-file-lines"></i> Pliego A4
       </button>
       <button type="button" onclick="imprimirEtiquetaDirecta()" class="btn btn-primary" style="padding: 0.5rem 1.25rem; background: #10b981; border-color: #10b981;">
         <i class="fa-solid fa-print"></i> Imprimir Etiqueta
@@ -849,6 +855,12 @@ function abrirModalImprimirEtiqueta(p) {
 function cerrarModalEtiqueta() {
   document.getElementById('modalEtiquetaProducto').style.display = 'none';
   currentEtiquetaProducto = null;
+}
+
+function irAPliegoA4() {
+  if (currentEtiquetaProducto && currentEtiquetaProducto.ProductoID) {
+    window.location.href = 'imprimir_codigos_a4.php?producto_id=' + currentEtiquetaProducto.ProductoID;
+  }
 }
 
 function actualizarVistaEtiqueta() {

@@ -1,10 +1,17 @@
 <?php
 // Version de la app: unica fuente de verdad, para que login y footer nunca queden desincronizados.
-define('APP_VERSION', 'v4.7.2');
+define('APP_VERSION', 'v4.7.3');
 
 // Novedades reales por versión, para la pantalla de bienvenida y el módulo "Acerca de".
 // Registra la cronología completa de la evolución del sistema desde su inicio.
 define('APP_CHANGELOG', [
+    'v4.7.3' => [
+        'Módulo de Impresión de Códigos de Barra en Hoja A4: Nueva herramienta especializada para generar e imprimir códigos en papel estándar de oficina A4.',
+        'Modo Pliego de Etiquetas A4: Generación de pliegos de stickers recortables o papel autoadhesivo para 1 o varios productos (12, 24, 30 o cantidad personalizada) con líneas de corte punteadas.',
+        'Modo Carta / Catálogo de Mostrador A4: Hoja de consulta rápida para el mesón de la caja organizada por categorías, permitiendo pistolear con el lector productos sin código físico (pesables, pan, etc.).',
+        'Opciones de Diseño Flexibles: Configuración en vivo para mostrar/ocultar precio, nombre del local, líneas de corte y selector de 2, 3 o 4 columnas por hoja.',
+        'Integración en Catálogo: Acceso directo desde Mantenedores, cabecera de Catálogo de Productos y botón "Pliego A4" dentro de la previsualización de cada etiqueta individual.',
+    ],
     'v4.7.2' => [
         'Kardex con Stock Inicial de Apertura: Registro y visualización del movimiento inicial de apertura de catálogo (INICIAL) para todos los productos, garantizando trazabilidad completa desde el origen.',
         'Buscador Inteligente de Productos en Kardex: Selector ergonómico con autocompletado en vivo por nombre, código de barras o código PLU, mostrando stock actual y categoría.',
