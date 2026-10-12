@@ -793,7 +793,7 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre, $contextoEnVivo = []
         return null;
     }
 
-    $modelos = ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-flash-latest'];
+    $modelos = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.8-flash'];
 
     $montoCLP = '$' . number_format($contextoEnVivo['ventas_monto'] ?? 0, 0, ',', '.');
     $cantVentas = (int)($contextoEnVivo['ventas_cant'] ?? 0);
@@ -900,15 +900,15 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre, $contextoEnVivo = []
             'x-goog-api-key: ' . $apiKey
         ]);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonBody);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
         $res = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-    // Si la clave no es válida (400) o hay saturación momentánea en Google (503 / 429), pasar de inmediato al motor local
-        if ($httpCode === 400 || $httpCode === 503 || $httpCode === 429) {
+        // Si la clave no es válida (400, 401, 403), no reintentar con la misma clave
+        if ($httpCode === 400 || $httpCode === 401 || $httpCode === 403) {
             break;
         }
 
