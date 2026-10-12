@@ -5,147 +5,185 @@
   <aside class="a4-sidebar" id="a4Sidebar">
     
     <div class="a4-sidebar-header">
-      <a href="productos.php" class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.5rem; font-size: 0.78rem;" title="Volver al Catálogo">
-        <i class="fa-solid fa-arrow-left"></i> Catálogo
+      <a href="productos.php" class="btn btn-secondary btn-sm" title="Volver al Catálogo">
+        <i class="fa-solid fa-arrow-left"></i> Volver
       </a>
-      <h2 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: #fff; display: flex; align-items: center; gap: 0.4rem;">
-        <i class="fa-solid fa-print" style="color: #38bdf8;"></i> Imprimir A4
+      <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-print" style="color: #38bdf8;"></i> Imprimir en A4
       </h2>
     </div>
 
-    <!-- MODO Y ORIGEN UNIFICADOS (ULTRA-COMPACTO) -->
-    <div class="a4-section" style="padding: 0.45rem 0.65rem;">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem;">
-        <div>
-          <label class="a4-section-title" style="margin-bottom: 0.25rem; font-size: 0.67rem;">MODO</label>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem;">
-            <button type="button" class="btn btn-secondary btn-sm active a4-compact-tab" id="btnModoPliego" onclick="cambiarModo('pliego')">
-              <i class="fa-solid fa-tags"></i> Pliego
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm a4-compact-tab" id="btnModoCatalogo" onclick="cambiarModo('catalogo')">
-              <i class="fa-solid fa-clipboard-list"></i> Carta
-            </button>
-          </div>
-        </div>
-        <div>
-          <label class="a4-section-title" style="margin-bottom: 0.25rem; font-size: 0.67rem;">ORIGEN</label>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem;">
-            <button type="button" class="btn btn-secondary btn-sm active a4-compact-tab" id="btnFiltroTipoTodos" onclick="setFiltroTipoCodigo('todos')">
-              Todos
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm a4-compact-tab" id="btnFiltroTipoInternos" onclick="setFiltroTipoCodigo('internos')" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);">
-              <i class="fa-solid fa-star"></i> Internos
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CONTROLES ESPECÍFICOS: MODO PLIEGO -->
-    <div id="panelModoPliego" class="a4-section" style="padding: 0.45rem 0.65rem;">
-      <label class="a4-section-title" style="margin-bottom: 0.3rem; font-size: 0.67rem;">SELECCIÓN DE PRODUCTO</label>
+    <!-- FILA 1: MODO DE IMPRESIÓN & ORIGEN DEL CÓDIGO (HORIZONTAL) -->
+    <div class="a4-controls-grid">
       
-      <select id="selectProductoPliego" class="form-control" onchange="seleccionarProductoPliego()" style="font-size: 0.82rem; padding: 0.3rem 0.5rem; height: 32px;">
-        <option value="">-- Elige un producto --</option>
-        <?php foreach ($todosProductos as $prod): ?>
-          <option value="<?= $prod['ProductoID'] ?>" 
-                  data-nombre="<?= htmlspecialchars($prod['Nombre']) ?>"
-                  data-codigo="<?= htmlspecialchars($prod['CodigoBarras'] ?: $prod['CodigoPLU'] ?: '') ?>"
-                  data-precio="<?= (int)$prod['PrecioVenta'] ?>"
-                  data-cat="<?= htmlspecialchars($prod['Categoria']) ?>"
-                  data-interno="<?= (int)$prod['EsCodigoInterno'] ?>"
-                  <?= ($preselectedId === (int)$prod['ProductoID']) ? 'selected' : '' ?>>
-            <?= htmlspecialchars($prod['Nombre']) ?> (<?= $prod['CodigoBarras'] ?: 'PLU: ' . $prod['CodigoPLU'] ?>) - $<?= number_format($prod['PrecioVenta'], 0, ',', '.') ?>
-          </option>
-        <?php endforeach; ?>
-      </select>
-
-      <div id="btnPliegoMixtoWrap" style="margin-top: 0.35rem; display: none;">
-        <button type="button" class="btn btn-secondary btn-sm btn-block" id="btnPliegoMixto" onclick="togglePliegoMixtoInternos()" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 600; font-size: 0.74rem; padding: 0.22rem 0.4rem;">
-          <i class="fa-solid fa-layer-group"></i> Llenar pliego con todos los internos (1 de c/u)
-        </button>
-      </div>
-
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem; margin-top: 0.4rem;">
-        <div class="a4-cant-chips" style="flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem;">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setCantidadPliego(12)" style="padding: 0.2rem 0.15rem; font-size: 0.74rem;">12</button>
-          <button type="button" class="btn btn-secondary btn-sm active" id="btnCant24" onclick="setCantidadPliego(24)" style="padding: 0.2rem 0.15rem; font-size: 0.74rem;">24</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setCantidadPliego(30)" style="padding: 0.2rem 0.15rem; font-size: 0.74rem;">30</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setCantidadPliego(48)" style="padding: 0.2rem 0.15rem; font-size: 0.74rem;">48</button>
-        </div>
-        <div style="display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0;">
-          <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">Personalizada:</span>
-          <input type="number" id="inputCantidadCustom" class="form-control" value="24" min="1" max="120" style="width: 52px; padding: 0.15rem 0.3rem; text-align: center; font-size: 0.8rem; height: 28px;" onchange="actualizarCantidadCustom()">
+      <!-- Modo de Impresión -->
+      <div class="a4-section">
+        <label class="a4-section-title">MODO DE IMPRESIÓN</label>
+        <div class="a4-mode-selector">
+          <button type="button" class="a4-mode-btn active" id="btnModoPliego" onclick="cambiarModo('pliego')">
+            <i class="fa-solid fa-tags"></i>
+            <div>
+              <strong>Pliego de Etiquetas</strong>
+              <small>Stickers o recortables</small>
+            </div>
+          </button>
+          <button type="button" class="a4-mode-btn" id="btnModoCatalogo" onclick="cambiarModo('catalogo')">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <div>
+              <strong>Carta de Mostrador</strong>
+              <small>Catálogo escaneable para caja</small>
+            </div>
+          </button>
         </div>
       </div>
+
+      <!-- Origen del Código -->
+      <div class="a4-section" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <label class="a4-section-title">ORIGEN DEL CÓDIGO</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem;">
+            <button type="button" class="btn btn-secondary btn-sm active" id="btnFiltroTipoTodos" onclick="setFiltroTipoCodigo('todos')">
+              <i class="fa-solid fa-boxes-stacked"></i> Todos
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnFiltroTipoInternos" onclick="setFiltroTipoCodigo('internos')" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);">
+              <i class="fa-solid fa-star"></i> Solo Internos
+            </button>
+          </div>
+        </div>
+        <small id="txtDescFiltroTipo" style="display: block; color: var(--text-muted); font-size: 0.72rem; margin-top: 0.35rem; line-height: 1.25;">
+          Mostrando todos los productos del catálogo.
+        </small>
+      </div>
+
     </div>
 
-    <!-- CONTROLES ESPECÍFICOS: MODO CATÁLOGO / CARTA -->
-    <div id="panelModoCatalogo" class="a4-section" style="padding: 0.45rem 0.65rem; display: none;">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-bottom: 0.35rem;">
+    <!-- FILA 2 (MODO PLIEGO): SELECCIÓN DE PRODUCTO & CANTIDAD DE ETIQUETAS (HORIZONTAL) -->
+    <div id="panelModoPliego" class="a4-controls-grid">
+      
+      <!-- Selección de Producto -->
+      <div class="a4-section" style="display: flex; flex-direction: column; justify-content: space-between;">
         <div>
-          <label class="a4-section-title" style="margin-bottom: 0.2rem; font-size: 0.65rem;">CATEGORÍA</label>
-          <select id="selectCategoriaCatalogo" class="form-control" onchange="filtrarCategoriaCatalogo()" style="font-size: 0.8rem; height: 30px; padding: 0.2rem 0.4rem;">
-            <option value="todas">Todas</option>
-            <?php foreach ($categorias as $c): ?>
-              <option value="<?= $c['CategoriaID'] ?>" <?= ($preselectedCat === (int)$c['CategoriaID']) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($c['Nombre']) ?>
+          <label class="a4-section-title">SELECCIÓN DE PRODUCTO</label>
+          <select id="selectProductoPliego" class="form-control" onchange="seleccionarProductoPliego()" style="font-size: 0.85rem;">
+            <option value="">-- Elige un producto --</option>
+            <?php foreach ($todosProductos as $prod): ?>
+              <option value="<?= $prod['ProductoID'] ?>" 
+                      data-nombre="<?= htmlspecialchars($prod['Nombre']) ?>"
+                      data-codigo="<?= htmlspecialchars($prod['CodigoBarras'] ?: $prod['CodigoPLU'] ?: '') ?>"
+                      data-precio="<?= (int)$prod['PrecioVenta'] ?>"
+                      data-cat="<?= htmlspecialchars($prod['Categoria']) ?>"
+                      data-interno="<?= (int)$prod['EsCodigoInterno'] ?>"
+                      <?= ($preselectedId === (int)$prod['ProductoID']) ? 'selected' : '' ?>>
+                <?= htmlspecialchars($prod['Nombre']) ?> (<?= $prod['CodigoBarras'] ?: 'PLU: ' . $prod['CodigoPLU'] ?>) - $<?= number_format($prod['PrecioVenta'], 0, ',', '.') ?>
               </option>
             <?php endforeach; ?>
           </select>
         </div>
-        <div>
-          <label class="a4-section-title" style="margin-bottom: 0.2rem; font-size: 0.65rem;">BUSCAR</label>
-          <input type="text" id="inputBusquedaCatalogo" class="form-control" placeholder="Filtrar..." oninput="filtrarTextoCatalogo()" style="font-size: 0.8rem; height: 30px; padding: 0.2rem 0.4rem;">
+
+        <div id="btnPliegoMixtoWrap" style="margin-top: 0.45rem; display: none;">
+          <button type="button" class="btn btn-secondary btn-sm btn-block" id="btnPliegoMixto" onclick="togglePliegoMixtoInternos()" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 600; font-size: 0.76rem;">
+            <i class="fa-solid fa-layer-group"></i> Llenar pliego con todos los internos (1 de c/u)
+          </button>
         </div>
       </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-        <span id="txtTotalItemsCatalogo" style="font-size: 0.72rem; color: var(--text-muted);">0 productos visibles</span>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleSeleccionarTodos()" style="padding: 0.1rem 0.4rem; font-size: 0.7rem;">
-          Invertir
-        </button>
+      <!-- Cantidad de Etiquetas -->
+      <div class="a4-section">
+        <label class="a4-section-title">CANTIDAD DE ETIQUETAS</label>
+        <div class="a4-cant-chips">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setCantidadPliego(12)">12 (½ Hoja)</button>
+          <button type="button" class="btn btn-secondary btn-sm active" id="btnCant24" onclick="setCantidadPliego(24)">24 (Hoja A4)</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setCantidadPliego(30)">30 (3x10)</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setCantidadPliego(48)">48 (2 Hojas)</button>
+        </div>
+        
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; margin-top: 0.45rem;">
+          <label style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">Personalizada:</label>
+          <input type="number" id="inputCantidadCustom" class="form-control" value="24" min="1" max="120" style="width: 70px; padding: 0.25rem 0.5rem; text-align: center; font-size: 0.85rem;" onchange="actualizarCantidadCustom()">
+          <span style="font-size: 0.78rem; color: var(--text-muted);">etiquetas</span>
+        </div>
       </div>
 
-      <div id="listaCheckProductos" class="a4-checklist" style="max-height: 140px;">
-        <!-- Generado dinámicamente con JS -->
-      </div>
     </div>
 
-    <!-- CONFIGURACIÓN VISUAL COMÚN -->
-    <div class="a4-section" style="padding: 0.45rem 0.65rem;">
-      <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; font-size: 0.75rem;">
-        <label class="a4-checkbox-row">
-          <input type="checkbox" id="chkMostrarPrecio" checked onchange="regenerarVistaA4()">
-          <span>Precio ($)</span>
-        </label>
-        <label class="a4-checkbox-row">
-          <input type="checkbox" id="chkMostrarEmpresa" checked onchange="regenerarVistaA4()">
-          <span>Nombre Local</span>
-        </label>
-        <label class="a4-checkbox-row">
-          <input type="checkbox" id="chkLineasCorte" checked onchange="regenerarVistaA4()">
-          <span>Líneas corte</span>
-        </label>
+    <!-- FILA 2 (MODO CATÁLOGO): FILTROS & CHECKLIST (HORIZONTAL) -->
+    <div id="panelModoCatalogo" class="a4-controls-grid" style="display: none;">
+      
+      <div class="a4-section">
+        <label class="a4-section-title">FILTRAR POR CATEGORÍA</label>
+        <select id="selectCategoriaCatalogo" class="form-control" onchange="filtrarCategoriaCatalogo()" style="font-size: 0.85rem; margin-bottom: 0.45rem;">
+          <option value="todas">Todas las categorías</option>
+          <?php foreach ($categorias as $c): ?>
+            <option value="<?= $c['CategoriaID'] ?>" <?= ($preselectedCat === (int)$c['CategoriaID']) ? 'selected' : '' ?>>
+              <?= htmlspecialchars($c['Nombre']) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+
+        <label class="a4-section-title">BUSCAR EN LISTA</label>
+        <input type="text" id="inputBusquedaCatalogo" class="form-control" placeholder="Escribe para buscar..." oninput="filtrarTextoCatalogo()" style="font-size: 0.85rem;">
       </div>
 
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding-top: 0.35rem; border-top: 1px dashed rgba(255, 255, 255, 0.08);">
-        <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700; white-space: nowrap;">COLUMNAS:</span>
-        <div class="a4-cols-chips" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.25rem; flex: 1;">
-          <button type="button" class="btn btn-secondary btn-sm" id="btnCol2" onclick="setColumnasA4(2)" style="padding: 0.2rem 0.3rem; font-size: 0.74rem;">2 Cols</button>
-          <button type="button" class="btn btn-secondary btn-sm active" id="btnCol3" onclick="setColumnasA4(3)" style="padding: 0.2rem 0.3rem; font-size: 0.74rem;">3 Cols</button>
-          <button type="button" class="btn btn-secondary btn-sm" id="btnCol4" onclick="setColumnasA4(4)" style="padding: 0.2rem 0.3rem; font-size: 0.74rem;">4 Cols</button>
+      <div class="a4-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+          <span id="txtTotalItemsCatalogo" style="font-size: 0.76rem; color: var(--text-muted);">0 productos visibles</span>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="toggleSeleccionarTodos()" style="padding: 0.15rem 0.45rem; font-size: 0.72rem;">
+            Invertir selección
+          </button>
+        </div>
+        <div id="listaCheckProductos" class="a4-checklist">
+          <!-- Generado dinámicamente con JS -->
         </div>
       </div>
+
+    </div>
+
+    <!-- FILA 3: OPCIONES DE DISEÑO & COLUMNAS (HORIZONTAL) -->
+    <div class="a4-controls-grid">
+      
+      <!-- Opciones de Diseño -->
+      <div class="a4-section">
+        <label class="a4-section-title">OPCIONES DE DISEÑO</label>
+        <div class="a4-opt-grid">
+          <label class="a4-checkbox-row">
+            <input type="checkbox" id="chkMostrarPrecio" checked onchange="regenerarVistaA4()">
+            <span>Mostrar Precio ($)</span>
+          </label>
+          <label class="a4-checkbox-row">
+            <input type="checkbox" id="chkMostrarEmpresa" checked onchange="regenerarVistaA4()">
+            <span>Mostrar Nombre del Local</span>
+          </label>
+          <label class="a4-checkbox-row">
+            <input type="checkbox" id="chkLineasCorte" checked onchange="regenerarVistaA4()">
+            <span>Líneas de corte punteadas</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Columnas por Hoja -->
+      <div class="a4-section" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <label class="a4-section-title">COLUMNAS POR HOJA</label>
+          <div class="a4-cols-chips">
+            <button type="button" class="btn btn-secondary btn-sm" id="btnCol2" onclick="setColumnasA4(2)" style="padding: 0.25rem 0.2rem; font-size: 0.74rem;">2 Cols</button>
+            <button type="button" class="btn btn-secondary btn-sm active" id="btnCol3" onclick="setColumnasA4(3)" style="padding: 0.25rem 0.2rem; font-size: 0.74rem;">3 Cols (Recom.)</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnCol4" onclick="setColumnasA4(4)" style="padding: 0.25rem 0.2rem; font-size: 0.74rem;">4 Cols</button>
+          </div>
+        </div>
+        <small style="display: block; color: var(--text-muted); font-size: 0.72rem; margin-top: 0.35rem;">
+          Ajusta automáticamente el tamaño de las etiquetas en la hoja.
+        </small>
+      </div>
+
     </div>
 
     <!-- BOTÓN DE IMPRESIÓN DIRECTA -->
-    <div style="padding-top: 0.15rem;">
-      <button type="button" onclick="imprimirHojaA4()" class="btn btn-primary btn-block a4-btn-print" style="padding: 0.55rem; font-size: 0.92rem; font-weight: 800;">
+    <div style="padding-top: 0.25rem;">
+      <button type="button" onclick="imprimirHojaA4()" class="btn btn-primary btn-block a4-btn-print">
         <i class="fa-solid fa-print"></i> IMPRIMIR HOJA A4
       </button>
-      <small style="display: block; text-align: center; color: var(--text-muted); font-size: 0.68rem; margin-top: 0.2rem;">
-        Atajo: <kbd>Ctrl + P</kbd> · Escala 100% y tamaño A4
+      <small style="display: block; text-align: center; color: var(--text-muted); font-size: 0.72rem; margin-top: 0.3rem;">
+        Atajo: <kbd>Ctrl + P</kbd> · Configura escala 100% y tamaño A4
       </small>
     </div>
 
@@ -156,7 +194,7 @@
     
     <div class="a4-preview-toolbar">
       <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <span id="badgePaginasA4" class="badge badge-info" style="font-size: 0.78rem; padding: 0.25rem 0.6rem;">
+        <span id="badgePaginasA4" class="badge badge-info" style="font-size: 0.78rem; padding: 0.25rem 0.65rem;">
           <i class="fa-regular fa-file"></i> Previsualización A4
         </span>
       </div>
@@ -165,9 +203,9 @@
       <div class="a4-zoom-toolbar">
         <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;"><i class="fa-solid fa-magnifying-glass"></i> Zoom:</span>
         <button type="button" class="btn btn-secondary btn-sm a4-zoom-btn" id="btnZoom60" onclick="setZoomA4(0.60)">60%</button>
-        <button type="button" class="btn btn-secondary btn-sm a4-zoom-btn active" id="btnZoom68" onclick="setZoomA4(0.68)">68% (Ajustar)</button>
+        <button type="button" class="btn btn-secondary btn-sm a4-zoom-btn active" id="btnZoom70" onclick="setZoomA4(0.70)">70% (Compacto)</button>
         <button type="button" class="btn btn-secondary btn-sm a4-zoom-btn" id="btnZoom80" onclick="setZoomA4(0.80)">80%</button>
-        <button type="button" class="btn btn-secondary btn-sm a4-zoom-btn" id="btnZoom100" onclick="setZoomA4(1.00)">100%</button>
+        <button type="button" class="btn btn-secondary btn-sm a4-zoom-btn" id="btnZoom100" onclick="setZoomA4(1.00)">100% (Real)</button>
       </div>
     </div>
 
@@ -214,7 +252,7 @@
 /* ESTILOS DE LA INTERFAZ EN PANTALLA                             */
 /* ============================================================== */
 :root {
-  --a4-zoom: 0.68;
+  --a4-zoom: 0.70;
 }
 
 .a4-page-container {
@@ -225,13 +263,13 @@
 }
 
 .a4-sidebar {
-  width: 440px;
+  width: 580px;
   background: #0f172a;
   border-right: 1px solid var(--border-dark);
-  padding: 0.65rem 0.85rem;
+  padding: 0.75rem 0.95rem;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.55rem;
   flex-shrink: 0;
   max-height: calc(100vh - 70px);
   overflow-y: auto;
@@ -245,11 +283,18 @@
   padding-bottom: 0.4rem;
 }
 
+.a4-controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+  align-items: stretch;
+}
+
 .a4-section {
   background: rgba(30, 41, 59, 0.4);
   border: 1px solid var(--border-dark);
   border-radius: 8px;
-  padding: 0.45rem 0.65rem;
+  padding: 0.5rem 0.65rem;
 }
 
 .a4-section-title {
@@ -258,30 +303,68 @@
   font-weight: 800;
   letter-spacing: 0.05em;
   color: #94a3b8;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.35rem;
   text-transform: uppercase;
 }
 
-.a4-compact-tab {
-  padding: 0.3rem 0.25rem !important;
-  font-size: 0.76rem !important;
-  font-weight: 700 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 0.3rem !important;
+.a4-mode-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
-.a4-compact-tab.active {
-  background: var(--primary) !important;
-  color: #fff !important;
-  border-color: var(--primary) !important;
+.a4-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1.5px solid var(--border-dark);
+  border-radius: 7px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.a4-mode-btn i {
+  font-size: 1.1rem;
+  color: #64748b;
+}
+
+.a4-mode-btn strong {
+  display: block;
+  font-size: 0.8rem;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.a4-mode-btn small {
+  display: block;
+  font-size: 0.68rem;
+  color: #94a3b8;
+  line-height: 1.15;
+}
+
+.a4-mode-btn.active {
+  border-color: var(--primary);
+  background: rgba(37, 99, 235, 0.15);
+}
+
+.a4-mode-btn.active i {
+  color: var(--primary);
 }
 
 .a4-cant-chips {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.35rem;
+}
+
+.a4-cant-chips .btn {
+  padding: 0.28rem 0.35rem;
+  font-size: 0.74rem;
+  text-align: center;
 }
 
 .a4-cant-chips .btn.active {
@@ -303,16 +386,16 @@
 }
 
 .a4-opt-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.4rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .a4-checkbox-row {
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: #e2e8f0;
   cursor: pointer;
   margin: 0;
@@ -320,7 +403,7 @@
 }
 
 .a4-checklist {
-  max-height: 150px;
+  max-height: 125px;
   overflow-y: auto;
   border: 1px solid var(--border-dark);
   border-radius: 8px;
@@ -754,13 +837,13 @@ function cambiarModo(modo) {
   if (modo === 'pliego') {
     btnPliego.classList.add('active');
     btnCat.classList.remove('active');
-    panelPliego.style.display = 'block';
+    panelPliego.style.display = 'grid';
     panelCat.style.display = 'none';
     headerCat.style.display = 'none';
   } else {
     btnCat.classList.add('active');
     btnPliego.classList.remove('active');
-    panelCat.style.display = 'block';
+    panelCat.style.display = 'grid';
     panelPliego.style.display = 'none';
     headerCat.style.display = 'flex';
   }
