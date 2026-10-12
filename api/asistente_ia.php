@@ -263,8 +263,21 @@ function resolverConocimientoLocal($q, $rol, $nombre) {
             . "🚀 **Listo:** El sistema te redirigirá automáticamente a la pantalla de **Caja POS**, listo para escanear y vender.";
     }
 
-    // 2.2 Cerrar Caja y Arqueo Ciego
-    if ((preg_match('/(cerr|cierr|arque|cuadr)/u', $q) && (str_contains($q, 'caja') || str_contains($q, 'turno'))) || str_contains($q, 'cierre z') || str_contains($q, 'sobrante') || str_contains($q, 'faltante') || str_contains($q, 'arqueo ciego')) {
+    // 2.2 Cierre Z Fiscal y Reportes Z
+    if (str_contains($q, 'cierre z') || str_contains($q, 'reporte z') || str_contains($q, 'reportes z') || str_contains($q, 'historial z')) {
+        return "🧾 **¿Dónde ver y cómo funciona el Cierre Z Fiscal?**\n\n"
+            . "El Cierre Z consolida las ventas y recaudación por caja con correlativo oficial:\n\n"
+            . "1. 📊 **Para consultar el Historial de Cierres Z:**\n"
+            . "   * Ve al menú superior **Reportes → Cierre Z Fiscal** (`reportes_z.php`).\n"
+            . "   * Encontrarás la tabla con cada Z emitido (#Z correlativo, fecha, caja, supervisor, boletas/facturas, monto neto, IVA 19% y total acumulado).\n"
+            . "   * También puedes presionar el botón **'Generar Cierre Z Diario'** para emitir un cierre consolidado de forma manual.\n\n"
+            . "2. 🔒 **Para emitirlo al cerrar tu caja registradora:**\n"
+            . "   * En **Caja y Ventas → Turnos y Arqueo** (`caja.php`), haz el conteo físico de dinero (arqueo ciego).\n"
+            . "   * Asegúrate de mantener marcada la casilla **'Generar Cierre Z de esta caja también'** antes de presionar *Cerrar Turno y Caja*.";
+    }
+
+    // 2.3 Cerrar Caja y Arqueo Ciego
+    if ((preg_match('/(cerr|cierr|arque|cuadr)/u', $q) && (str_contains($q, 'caja') || str_contains($q, 'turno'))) || str_contains($q, 'sobrante') || str_contains($q, 'faltante') || str_contains($q, 'arqueo ciego')) {
         return "🔒 **¿Cómo cerrar tu turno de caja (Arqueo Ciego)?**\n\n"
             . "1. Ve a **Turnos / Arqueo** en el menú superior.\n"
             . "2. El sistema utiliza **Arqueo Ciego** (los montos del sistema están ocultos para asegurar un conteo honesto).\n"
@@ -668,7 +681,8 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
         . "ESTRUCTURA DE MÓDULOS DEL SISTEMA (LO QUE SÍ TIENE): "
         . "- Caja POS (pos.php): Venta rápida con lector o búsqueda, atajos (F12 cobrar, Ctrl+F10 gaveta, F2 buscador, +/- cantidad, Supr eliminar). Cobro en Efectivo, Tarjeta Transbank/POS, Transferencia, Fiado/Crédito interno con cupo, Puntos (1 pt = $1 CLP) y Pago Mixto. Pausar y recuperar ventas en botón 'Pendientes'. Descuentos en caja (porcentaje o monto). Modos de pantalla: Supermercado (rápido escáner), Táctil (touchscreen con tarjetas grandes) y Clásico (dividido catálogo y carrito). Modo Offline en IndexedDB con sincronización automática. "
         . "- Pesables y Balanza (productos.php, pos.php, configuracion.php): Casilla 'Es Pesable', botón '⚡ Generar PLU' (4 dígitos). Balanza con etiqueta EAN-13 o sin etiqueta con ventana interactiva para ingresar kilos (calcula $) o monto $ (calcula kilos). "
-        . "- Turnos y Arqueo (caja.php, reportes_z.php): Apertura con monto de fondo y selección de caja física; botón 'Retiro / Ingreso' para justificar salidas de efectivo (pagos, gastos, adelantos); cierre con Arqueo Ciego honesto (conteo de efectivo, vouchers y transferencias), clave de supervisor y Cierre Z diario acumulado. "
+        . "- Caja y Ventas -> Turnos y Arqueo (caja.php): Apertura de turno con monto de fondo y selección de caja física; botón 'Retiro / Ingreso' para justificar salidas de efectivo (pagos a proveedores, adelantos); cierre de turno mediante Arqueo Ciego honesto (conteo físico de efectivo en billetes/monedas, vouchers y transferencias), clave de supervisor (si es cajero) y casilla marcada por defecto 'Generar Cierre Z de esta caja también' para emitir el Z al finalizar la jornada. "
+        . "- Reportes -> Cierre Z Fiscal (reportes_z.php): Módulo exclusivo para consultar el historial de todos los Cierres Z correlativos (#Z) emitidos, con fecha, supervisor, boletas/facturas, monto neto, IVA (19%) y total recaudado. También incluye botón para 'Generar Cierre Z Diario' de forma manual si no se emitió desde la caja. "
         . "- Multi-Caja (cajas.php): Habilitación de cajas registradoras físicas (Caja 01, Caja 02). "
         . "- Mantenedores -> Imprimir Códigos A4 (imprimir_codigos_a4.php): Módulo especializado para imprimir en hoja estándar A4. Modo Pliego de Etiquetas (stickers recortables de 1 producto o pliego mixto con 1 de cada código interno), Modo Carta de Mostrador (catálogo escaneable organizado por categorías para mesón de caja), selector de 2/3/4 columnas, filtro ⭐ 'Solo Internos', selector de zoom y líneas de corte punteadas. "
         . "- Inventario -> Productos (productos.php): Catálogo, generar código EAN-8 automático (prefijo 2), múltiples códigos por producto, stock mínimo, e imprimir etiquetas individuales (1 por 1 para rollo de stickers térmicos 50x30mm) o enlace a Imprimir Códigos A4. "
