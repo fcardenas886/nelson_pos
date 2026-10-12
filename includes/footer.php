@@ -44,28 +44,20 @@
       <!-- Mensaje Inicial de Bienvenida -->
       <div class="chat-ia-msg bot">
         <div class="chat-ia-bubble">
-          <p>👋 ¡Hola! Soy el **Asistente Oficial de Minimarket POS**.</p>
-          <p>Estoy aquí para guiarte paso a paso sobre <strong>cómo usar cualquier función del sistema</strong> (ventas, cobros, turnos, mermas, kardex, inventario, fiados, compras y reportes).</p>
-          <p style="margin-top: 0.5rem; font-weight: 600; color: #a5b4fc;">Preguntas frecuentes rápidas:</p>
+          <p>👋 Hola, soy tu guía operativo del sistema. Pregúntame sobre cualquier función o atajo:</p>
           <div class="chat-ia-chips">
-            <button type="button" class="chat-ia-chip-btn" onclick="enviarPreguntaChip('¿Cómo abro y cierro mi turno de caja?')">
-              <i class="fa-solid fa-cash-register"></i> ¿Cómo abrir y cerrar mi turno de caja?
+            <button type="button" class="chat-ia-chip-btn" onclick="enviarPreguntaChip('¿Cómo abrir y cerrar turno de caja?')">
+              <i class="fa-solid fa-cash-register"></i> Abrir / cerrar turno y arqueo
             </button>
-            <button type="button" class="chat-ia-chip-btn" onclick="enviarPreguntaChip('¿Cómo cobrar con fiado, puntos o pago mixto?')">
-              <i class="fa-solid fa-credit-card"></i> ¿Cómo cobrar con fiado, puntos o pago mixto?
+            <button type="button" class="chat-ia-chip-btn" onclick="enviarPreguntaChip('¿Cuáles son los atajos de teclado del POS?')">
+              <i class="fa-solid fa-keyboard"></i> Atajos de teclado del POS
             </button>
-            <button type="button" class="chat-ia-chip-btn" onclick="enviarPreguntaChip('¿Cómo registrar una merma o pérdida de stock?')">
-              <i class="fa-solid fa-trash-can"></i> ¿Cómo registrar una merma o pérdida?
-            </button>
-            <button type="button" class="chat-ia-chip-btn" onclick="enviarPreguntaChip('¿Cómo ver las utilidades por categoría desplegable?')">
-              <i class="fa-solid fa-folder-tree"></i> ¿Cómo ver utilidades por categoría?
-            </button>
-            <button type="button" class="chat-ia-chip-btn" onclick="enviarPreguntaChip('¿Cómo generar un código PLU de balanza o EAN-8?')">
-              <i class="fa-solid fa-barcode"></i> ¿Cómo generar código PLU o EAN-8?
+            <button type="button" class="chat-ia-chip-btn" onclick="enviarPreguntaChip('¿Cómo imprimir códigos en hoja A4?')">
+              <i class="fa-solid fa-print"></i> Imprimir códigos en hoja A4
             </button>
           </div>
         </div>
-        <div class="chat-ia-time"><?= date('H:i') ?></div>
+        <div class="chat-ia-time"><?= date('H:i') ?> · <span style="opacity:0.65; color:#a855f7;" title="IA Asistente"><i class="fa-solid fa-wand-magic-sparkles"></i></span></div>
       </div>
     </div>
 

@@ -290,26 +290,30 @@
       </tr>
     </thead>
     <tbody>
-      <?php foreach ($historialTurnos as $h): ?>
-        <tr>
-          <td>#<?= $h['TurnoID'] ?></td>
-          <td><?= htmlspecialchars($h['Usuario']) ?></td>
-          <td><?= date('d/m/Y H:i', strtotime($h['FechaApertura'])) ?></td>
-          <td><?= $h['FechaCierre'] ? date('d/m/Y H:i', strtotime($h['FechaCierre'])) : '-' ?></td>
-          <td><?= formatCLP($h['MontoApertura']) ?></td>
-          <td><?= $h['MontoCierreEfectivo'] !== null ? formatCLP($h['MontoCierreEfectivo']) : '-' ?></td>
-          <td>
-            <span class="badge <?= $h['Estado'] == 'Abierto' ? 'badge-success' : 'badge-warning' ?>">
-              <?= $h['Estado'] ?>
-            </span>
-          </td>
-          <td>
-            <button onclick="verDetalleTurno(<?= $h['TurnoID'] ?>)" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.8rem;">
-              <i class="fa-solid fa-eye"></i> Detalle
-            </button>
-          </td>
-        </tr>
-      <?php endforeach; ?>
+      <?php if (empty($historialTurnos)): ?>
+        <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 1.75rem;">No hay registros previos de turnos de caja.</td></tr>
+      <?php else: ?>
+        <?php foreach ($historialTurnos as $h): ?>
+          <tr>
+            <td>#<?= $h['TurnoID'] ?></td>
+            <td><?= htmlspecialchars($h['Usuario']) ?><?= !empty($h['NombreCaja']) ? ' <small style="color:var(--text-muted);">(' . htmlspecialchars($h['NombreCaja']) . ')</small>' : '' ?></td>
+            <td><?= date('d/m/Y H:i', strtotime($h['FechaApertura'])) ?></td>
+            <td><?= $h['FechaCierre'] ? date('d/m/Y H:i', strtotime($h['FechaCierre'])) : '<span style="color:var(--success); font-weight:600;">En curso</span>' ?></td>
+            <td><?= formatCLP($h['MontoApertura']) ?></td>
+            <td><?= $h['MontoCierreEfectivo'] !== null ? formatCLP($h['MontoCierreEfectivo']) : '-' ?></td>
+            <td>
+              <span class="badge <?= $h['Estado'] == 'Abierto' ? 'badge-success' : 'badge-warning' ?>">
+                <?= $h['Estado'] ?>
+              </span>
+            </td>
+            <td>
+              <button onclick="verDetalleTurno(<?= $h['TurnoID'] ?>)" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.8rem;">
+                <i class="fa-solid fa-eye"></i> Detalle
+              </button>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+      <?php endif; ?>
     </tbody>
   </table>
 </div>
