@@ -311,12 +311,19 @@ function resolverConocimientoLocal($q, $rol, $nombre) {
     }
 
     // 10. Códigos EAN-8 y Etiquetas Góndola
-    if (str_contains($q, 'ean') || str_contains($q, 'etiqueta') || str_contains($q, 'generar código') || str_contains($q, 'codigo de barra')) {
+    if (str_contains($q, 'ean') || str_contains($q, 'etiqueta') || str_contains($q, 'generar código') || str_contains($q, 'codigo de barra') || str_contains($q, 'imprimir codigo') || str_contains($q, 'imprimir código')) {
+        if (str_contains($q, 'a4') || str_contains($q, 'hoja normal') || str_contains($q, 'pliego') || str_contains($q, 'carta')) {
+            return "⚠️ **El sistema actualmente NO cuenta con una plantilla para imprimir grillas de códigos en hoja normal A4.**\n\n"
+                . "📌 **¿Cómo funciona la impresión actual?**\n"
+                . "En **Maestros → Productos y Precios**, al presionar el botón de código de barras de un producto, el sistema genera **1 sola etiqueta individual** pensada para impresoras térmicas de pegatinas (formato sticker 50x30mm o papel continuo de góndola).\n\n"
+                . "💡 *Si necesitas tener códigos a mano en el mostrador para productos sin código (como pan o pesables), la alternativa actual es anotar su código o PLU de 4 dígitos para digitarlo en el POS.*";
+        }
+
         return "🏷️ **Generación de Códigos de Barra EAN-8 y Etiquetas:**\n\n"
-            . "1. Ve a **Maestros → Productos y Precios** y crea un nuevo producto.\n"
+            . "1. Ve a **Maestros → Productos y Precios** y crea o edita un producto.\n"
             . "2. Si el producto no tiene código de barra de fábrica (ej. pan, artesanías, empanadas), presiona el botón **'⚡ Generar EAN-8'**.\n"
             . "3. El sistema le asignará un código estándar oficial de 8 dígitos.\n"
-            . "4. Al guardar, puedes presionar **'Imprimir Etiqueta'** para generar e imprimir pegatinas térmicas con código de barra en SVG, nombre y precio para las góndolas.";
+            . "4. En la tabla de productos, presiona el botón con el ícono de **Código de Barras** para abrir la ventana de previsualización e imprimir la **etiqueta individual** (con nombre, código de barras SVG y precio opcional) compatible con impresoras térmicas de stickers adhesivos.";
     }
 
     // 11. Promociones y Ofertas
@@ -433,7 +440,7 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
         . "- Operaciones -> Cotizaciones (cotizaciones.php): Crear presupuestos/notas de pedido con cliente y productos, ver detalle en pantalla (icono de ojo), anular, y botón 'A la caja' para transferir los productos directo al carrito del POS para cobrar con F12. ATENCIÓN: El sistema NO tiene botón para enviar por WhatsApp, ni enviar por email, ni generar PDF; no inventes esas funciones. "
         . "- Operaciones -> Recepción de Compras (recepcion_compras.php): En 2 fases: Fase 1 ingresa stock y costo de factura del proveedor; Fase 2 actualiza precios con recálculo de margen sobre costo. "
         . "- Operaciones -> Devoluciones y Anulaciones (ventas.php, devoluciones.php): Anulación total reponiendo stock (incluso packs) o vales de devolución. "
-        . "- Inventario -> Productos (productos.php): Catálogo, generar código EAN-8, generar PLU para balanza pesable, imprimir etiquetas de góndola, stock mínimo. "
+        . "- Inventario -> Productos (productos.php): Catálogo, generar código EAN-8, generar PLU para balanza pesable, stock mínimo, e imprimir etiquetas individuales (1 por 1 para rollo de stickers térmicos 50x30mm). ATENCIÓN: El sistema NO tiene plantilla para imprimir en hoja A4 ni grilla de múltiples códigos. "
         . "- Inventario -> Kardex (kardex.php): Trazabilidad de movimientos con movimiento INICIAL de apertura de catálogo, buscador predictivo, tarjeta resumen con KPIs (Stock Inicial, Entradas +, Salidas -, Saldo Actual =), filtros y Excel. "
         . "- Inventario -> Ajustes de Stock (ajustes_stock.php) y Mermas (reportes.php?tab=mermas): Registro clasificado de bajas (Vencimiento, Daño/Rotura, Pérdida, Consumo Interno) congelando costo unitario. "
         . "- Maestros -> Clientes y Créditos (clientes.php): Cupo de fiado, pagos/abonos con algoritmo FIFO, y acumulación/canje de puntos (1 punto = $1). "
@@ -443,10 +450,11 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
         . "REGLAS CRÍTICAS DE PRECISIÓN Y HONESTIDAD: "
         . "1. Responde ÚNICAMENTE sobre las funciones REALES de Minimarket POS. NUNCA inventes funciones, botones o integraciones que no existen. "
         . "2. SI PREGUNTA POR WHATSAPP EN COTIZACIONES O VENTAS: Aclara explícitamente que el sistema NO tiene integración de envío por WhatsApp ni exportación a PDF; explica que la cotización se consulta en pantalla con el botón 'Ver detalle' y se carga al POS con el botón 'A la caja'. "
-        . "3. SI PREGUNTA POR NÓMINAS / SUELDOS: Aclara que no hay módulo de sueldos y ofrece como alternativa 'Retiro de Caja' con motivo. "
-        . "4. Si el usuario pregunta algo ajeno al sistema (política, cocina, religión, ciencia, chistes), declina amablemente y reorienta a las funciones del POS. "
-        . "5. Usa formato claro con negritas, pasos numerados (1., 2., 3.) y atajos como <kbd>F12</kbd> o <kbd>Alt + I</kbd>. "
-        . "6. El usuario actual se llama '$nombre' y tiene el rol de '$rol'. Sé amable, profesional y conciso.";
+        . "3. SI PREGUNTA POR IMPRIMIR CÓDIGOS EN HOJA NORMAL A4: Aclara que actualmente el sistema solo cuenta con impresión de etiquetas individuales (1 a 1 para impresora térmica de pegatinas 50x30mm) y que NO incluye generador de pliegos o catálogo en hoja A4. "
+        . "4. SI PREGUNTA POR NÓMINAS / SUELDOS: Aclara que no hay módulo de sueldos y ofrece como alternativa 'Retiro de Caja' con motivo. "
+        . "5. Si el usuario pregunta algo ajeno al sistema (política, cocina, religión, ciencia, chistes), declina amablemente y reorienta a las funciones del POS. "
+        . "6. Usa formato claro con negritas, pasos numerados (1., 2., 3.) y atajos como <kbd>F12</kbd> o <kbd>Alt + I</kbd>. "
+        . "7. El usuario actual se llama '$nombre' y tiene el rol de '$rol'. Sé amable, profesional y conciso.";
 
     $body = [
         'contents' => [
