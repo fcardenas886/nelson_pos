@@ -1,23 +1,19 @@
 <?php
 // Version de la app: unica fuente de verdad, para que login y footer nunca queden desincronizados.
-define('APP_VERSION', 'v4.7.4');
+define('APP_VERSION', 'v4.8.0');
 
 // Novedades reales por versión, para la pantalla de bienvenida y el módulo "Acerca de".
 // Registra la cronología completa de la evolución del sistema desde su inicio.
 define('APP_CHANGELOG', [
-    'v4.7.4' => [
-        'Optimización Ergonómica de Impresión A4: Reorganización horizontal en 2 columnas del panel lateral para que todas las opciones quepan 100% en pantalla sin scroll vertical.',
-        'Preservación de Diseño Original: Mantenimiento de tarjetas con iconos, títulos y descripciones explicativas completas en el selector de modo y origen.',
-        'Ajuste de Previsualización y Zoom: Escala inicial de la hoja A4 calibrada a 70% (147 mm de ancho) con botones rápidos de zoom (60%, 70%, 80%, 100%) para una vista equilibrada y cómoda en pantalla.',
-        'Pliego Mixto de Códigos Internos: Distribución equitativa de todos los productos internos del local (EAN-8 / PLU) en una sola hoja A4 para optimizar el uso de papel.',
-    ],
-    'v4.7.3' => [
-        'Módulo de Impresión de Códigos de Barra en Hoja A4: Nueva herramienta especializada para generar e imprimir códigos en papel estándar de oficina A4.',
-        'Modo Pliego de Etiquetas A4: Generación de pliegos de stickers recortables o papel autoadhesivo para 1 o varios productos (12, 24, 30 o cantidad personalizada) con líneas de corte punteadas.',
-        'Filtro y Pliego para Códigos Internos (EAN-8 / PLU): Acceso directo para imprimir únicamente los artículos creados por el local (productos pesables, pan, miel o códigos internos de 8 dígitos), con función de pliego mixto de 1 etiqueta por cada interno.',
-        'Modo Carta / Catálogo de Mostrador A4: Hoja de consulta rápida para el mesón de la caja organizada por categorías, permitiendo pistolear con el lector productos sin código físico (pesables, pan, etc.).',
-        'Opciones de Diseño Flexibles: Configuración en vivo para mostrar/ocultar precio, nombre del local, líneas de corte y selector de 2, 3 o 4 columnas por hoja.',
-        'Integración en Catálogo: Acceso directo desde Mantenedores, cabecera de Catálogo de Productos y botón "Pliego A4" dentro de la previsualización de cada etiqueta individual.',
+    'v4.8.0' => [
+        'Módulo de Impresión de Códigos de Barra en Hoja A4: Sistema integral para generar pliegos de stickers recortables y catálogos de mostrador en papel estándar de oficina A4.',
+        'Diseño Ergonómico en 2 Columnas: Panel lateral ampliado a 580px con controles organizados en grilla horizontal para que todas las opciones quepan 100% en pantalla sin scroll vertical.',
+        'Modo Pliego de Etiquetas y Pliego Mixto: Impresión de stickers para un producto o pliego mixto con 1 etiqueta de cada código interno del local (EAN-8 / PLU / Balanza) para optimizar papel.',
+        'Modo Carta / Catálogo de Mostrador: Hoja de consulta rápida organizada por categorías para el mesón de caja, facilitando el escaneo de pesables y productos sin código comercial.',
+        'Previsualizador Calibrado con Zoom: Vista previa A4 con escala inicial compacta al 70% y controles rápidos (60%, 70%, 80%, 100%), garantizando escala 100% nítida al imprimir.',
+        'Filtro de Códigos Internos (⭐): Aislamiento con un clic de productos propios y pesables frente a productos comerciales de fábrica.',
+        'Opciones de Diseño Flexibles: Configuración en vivo para mostrar/ocultar precio, nombre del local, líneas de corte punteadas y selector de 2, 3 o 4 columnas por hoja.',
+        'Integración en Catálogo: Acceso directo desde Mantenedores, cabecera de Catálogo de Productos y botón "Pliego A4" dentro de la etiqueta individual.',
     ],
     'v4.7.2' => [
         'Kardex con Stock Inicial de Apertura: Registro y visualización del movimiento inicial de apertura de catálogo (INICIAL) para todos los productos, garantizando trazabilidad completa desde el origen.',
