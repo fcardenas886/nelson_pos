@@ -671,16 +671,57 @@ toggleBalanzaModo();
         </p>
 
         <div>
-          <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">CLAVE DE API GOOGLE GEMINI (OPCIONAL)</label>
-          <input type="password" 
-                 name="config[GEMINI_API_KEY]" 
-                 value="<?= htmlspecialchars($config['GEMINI_API_KEY'] ?? '') ?>" 
-                 placeholder="AIzaSy... (Dejar en blanco para usar el motor local integrado sin costo)" 
-                 class="form-control" 
-                 style="font-family: monospace; font-size: 0.85rem;">
-          <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.35rem;">
-            Si se deja en blanco, el asistente operará 100% con su base de conocimiento estructurada y precisa en el servidor local.
-          </small>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.3rem;">
+            <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin: 0;">CLAVE DE API GOOGLE GEMINI (OPCIONAL)</label>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: #38bdf8; text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> Obtener clave gratuita en Google AI Studio
+            </a>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="password" 
+                   id="inputGeminiApiKey"
+                   name="config[GEMINI_API_KEY]" 
+                   value="<?= htmlspecialchars($config['GEMINI_API_KEY'] ?? '') ?>" 
+                   placeholder="AIzaSy... (Dejar en blanco para usar el motor local integrado sin costo)" 
+                   class="form-control" 
+                   style="font-family: monospace; font-size: 0.85rem; flex: 1;">
+            
+            <button type="button" class="btn btn-secondary" onclick="togglePasswordVisibility('inputGeminiApiKey', this)" title="Ver / Ocultar clave" style="padding: 0 0.85rem;">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+
+            <button type="button" id="btnTestGemini" class="btn btn-secondary" onclick="probarConexionGemini()" style="white-space: nowrap; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
+              <i class="fa-solid fa-vial"></i> Probar Clave
+            </button>
+          </div>
+
+          <!-- Estado actual de la clave guardada en la base de datos -->
+          <?php
+            $currentKey = trim($config['GEMINI_API_KEY'] ?? '');
+          ?>
+          <div id="divEstadoActualKey" style="margin-top: 0.6rem;">
+            <?php if (empty($currentKey)): ?>
+              <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #38bdf8; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-bolt"></i> <span><strong>Modo Activo: Motor Local Integrado</strong> (Sin clave configurada. Respuestas instantáneas y offline con más de 36 módulos cubiertos).</span>
+              </div>
+            <?php elseif (str_starts_with($currentKey, 'AIzaSy') && strlen($currentKey) >= 35): ?>
+              <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #34d399; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-circle-check"></i> <span><strong>Formato de clave de Google válido:</strong> Comienza con <code>AIzaSy</code> (<?= strlen($currentKey) ?> caracteres). Presiona <em>'Probar Clave'</em> para verificar comunicación en vivo con Google.</span>
+              </div>
+            <?php else: ?>
+              <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #f87171; display: flex; align-items: flex-start; gap: 0.5rem;">
+                <i class="fa-solid fa-triangle-exclamation" style="margin-top: 2px;"></i> 
+                <div>
+                  <strong>Formato no compatible con Gemini:</strong> La clave guardada empieza con <code><?= htmlspecialchars(substr($currentKey, 0, 8)) ?>...</code> (<?= strlen($currentKey) ?> caracteres). 
+                  Las API Keys de Google AI Studio siempre empiezan con <code>AIzaSy</code> (39 caracteres). El sistema conmuta automáticamente al <strong>Motor Local</strong> para no fallar.
+                </div>
+              </div>
+            <?php endif; ?>
+          </div>
+
+          <!-- Resultado dinámico de la prueba -->
+          <div id="divResultadoTestGemini" style="display: none; margin-top: 0.6rem;"></div>
         </div>
       </div>
 
@@ -962,6 +1003,70 @@ function toggleDteFields() {
     divSII.style.display = 'flex';
     divMsg.style.display = 'none';
   }
+}
+
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+  } else {
+    input.type = 'password';
+    btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+  }
+}
+
+function probarConexionGemini() {
+  const input = document.getElementById('inputGeminiApiKey');
+  const btn = document.getElementById('btnTestGemini');
+  const resDiv = document.getElementById('divResultadoTestGemini');
+  if (!input || !btn || !resDiv) return;
+
+  const key = input.value.trim();
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Probando...';
+  resDiv.style.display = 'block';
+  resDiv.innerHTML = '<div style="background: rgba(148, 163, 184, 0.1); border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #cbd5e1;"><i class="fa-solid fa-spinner fa-spin"></i> Contactando servidores de Google Gemini...</div>';
+
+  fetch('api/probar_gemini.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ api_key: key })
+  })
+  .then(res => res.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-vial"></i> Probar Clave';
+    if (data.success) {
+      resDiv.innerHTML = `
+        <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 0.6rem 0.85rem; font-size: 0.82rem; color: #34d399;">
+          <div style="font-weight: 700; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem;">
+            <i class="fa-solid fa-circle-check"></i> ${data.mensaje}
+          </div>
+          <small style="color: #a7f3d0;">Modelo en uso: <strong>${data.modelo}</strong>. Recuerda hacer clic en "Guardar Configuración de IA" abajo para persistir cualquier cambio.</small>
+        </div>
+      `;
+    } else {
+      resDiv.innerHTML = `
+        <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 0.6rem 0.85rem; font-size: 0.82rem; color: #f87171;">
+          <div style="font-weight: 700; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem;">
+            <i class="fa-solid fa-circle-xmark"></i> ${data.mensaje || data.error}
+          </div>
+          ${data.ayuda ? `<small style="color: #fca5a5; display: block; margin-top: 0.2rem;">${data.ayuda}</small>` : ''}
+        </div>
+      `;
+    }
+  })
+  .catch(err => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-vial"></i> Probar Clave';
+    resDiv.innerHTML = `
+      <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 0.6rem 0.85rem; font-size: 0.82rem; color: #f87171;">
+        <i class="fa-solid fa-triangle-exclamation"></i> Error al conectar con el servidor local para realizar la prueba.
+      </div>
+    `;
+  });
 }
 
 // Ejecutar al cargar la página

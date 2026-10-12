@@ -93,19 +93,19 @@ function enviarMensajeUsuario(texto) {
     .then(data => {
       quitarIndicadorEscribiendo(typingId);
       if (data && data.success && data.respuesta) {
-        agregarBurbujaChat('bot', data.respuesta);
-        guardarEnHistorial('bot', data.respuesta);
+        agregarBurbujaChat('bot', data.respuesta, data.fuente || 'motor_local');
+        guardarEnHistorial('bot', data.respuesta, data.fuente || 'motor_local');
       } else {
         const errTxt = data.error || 'Lo siento, no pude procesar la consulta en este momento.';
-        agregarBurbujaChat('bot', '⚠️ ' + errTxt);
-        guardarEnHistorial('bot', '⚠️ ' + errTxt);
+        agregarBurbujaChat('bot', '⚠️ ' + errTxt, 'sistema');
+        guardarEnHistorial('bot', '⚠️ ' + errTxt, 'sistema');
       }
     })
     .catch(err => {
       quitarIndicadorEscribiendo(typingId);
       const msgErr = '⚠️ Ocurrió un error al comunicar con el servidor. Verifica tu conexión.';
-      agregarBurbujaChat('bot', msgErr);
-      guardarEnHistorial('bot', msgErr);
+      agregarBurbujaChat('bot', msgErr, 'sistema');
+      guardarEnHistorial('bot', msgErr, 'sistema');
     });
 }
 
@@ -114,7 +114,7 @@ function enviarPreguntaChip(texto) {
   enviarMensajeUsuario(texto);
 }
 
-function agregarBurbujaChat(tipo, contenidoTexto) {
+function agregarBurbujaChat(tipo, contenidoTexto, fuente = null) {
   const chatBody = document.getElementById('chatIABody');
   if (!chatBody) return;
 
@@ -135,7 +135,18 @@ function agregarBurbujaChat(tipo, contenidoTexto) {
 
   const timeDiv = document.createElement('div');
   timeDiv.className = 'chat-ia-time';
-  timeDiv.textContent = horaStr;
+  
+  let badgeFuente = '';
+  if (tipo === 'bot') {
+    if (fuente === 'gemini') {
+      badgeFuente = ' · <span style="color:#c084fc; font-weight:600;"><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini Cloud</span>';
+    } else if (fuente === 'motor_local') {
+      badgeFuente = ' · <span style="color:#38bdf8; font-weight:600;"><i class="fa-solid fa-bolt"></i> Motor Local</span>';
+    } else if (fuente === 'guardrail') {
+      badgeFuente = ' · <span style="color:#34d399; font-weight:600;"><i class="fa-solid fa-shield-halved"></i> Sistema</span>';
+    }
+  }
+  timeDiv.innerHTML = horaStr + badgeFuente;
 
   msgDiv.appendChild(bubbleDiv);
   msgDiv.appendChild(timeDiv);
@@ -222,10 +233,10 @@ function formatearTextoMarkdown(txt) {
   return resLineas.join('');
 }
 
-function guardarEnHistorial(tipo, texto) {
+function guardarEnHistorial(tipo, texto, fuente = null) {
   try {
     let hist = JSON.parse(sessionStorage.getItem('chat_ia_historial') || '[]');
-    hist.push({ tipo: tipo, texto: texto, time: Date.now() });
+    hist.push({ tipo: tipo, texto: texto, fuente: fuente, time: Date.now() });
     // Guardar hasta los últimos 30 mensajes
     if (hist.length > 30) hist = hist.slice(-30);
     sessionStorage.setItem('chat_ia_historial', JSON.stringify(hist));
@@ -242,7 +253,7 @@ function cargarHistorialSesion() {
       // Limpiar mensaje inicial por defecto si ya hay historial previo
       chatBody.innerHTML = '';
       hist.forEach(item => {
-        agregarBurbujaChat(item.tipo, item.texto);
+        agregarBurbujaChat(item.tipo, item.texto, item.fuente || null);
       });
     }
 
