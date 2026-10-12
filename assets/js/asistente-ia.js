@@ -139,11 +139,11 @@ function agregarBurbujaChat(tipo, contenidoTexto, fuente = null) {
   let badgeFuente = '';
   if (tipo === 'bot') {
     if (fuente === 'gemini') {
-      badgeFuente = ' · <span style="color:#c084fc; font-weight:600;"><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini Cloud</span>';
+      badgeFuente = ' · <span style="opacity:0.65; color:#a855f7;" title="IA Asistente"><i class="fa-solid fa-wand-magic-sparkles"></i></span>';
     } else if (fuente === 'motor_local') {
-      badgeFuente = ' · <span style="color:#38bdf8; font-weight:600;"><i class="fa-solid fa-bolt"></i> Motor Local</span>';
+      badgeFuente = ' · <span style="opacity:0.65; color:#38bdf8;" title="Manual POS"><i class="fa-solid fa-bolt"></i></span>';
     } else if (fuente === 'guardrail') {
-      badgeFuente = ' · <span style="color:#34d399; font-weight:600;"><i class="fa-solid fa-shield-halved"></i> Sistema</span>';
+      badgeFuente = ' · <span style="opacity:0.65; color:#34d399;" title="Sistema"><i class="fa-solid fa-shield-halved"></i></span>';
     }
   }
   timeDiv.innerHTML = horaStr + badgeFuente;

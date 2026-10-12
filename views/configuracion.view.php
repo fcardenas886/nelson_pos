@@ -683,7 +683,7 @@ toggleBalanzaModo();
                    id="inputGeminiApiKey"
                    name="config[GEMINI_API_KEY]" 
                    value="<?= htmlspecialchars($config['GEMINI_API_KEY'] ?? '') ?>" 
-                   placeholder="AIzaSy... (Dejar en blanco para usar el motor local integrado sin costo)" 
+                   placeholder="AQ.Ab... o AIza... (Dejar en blanco para usar el motor local integrado sin costo)" 
                    class="form-control" 
                    style="font-family: monospace; font-size: 0.85rem; flex: 1;">
             
@@ -705,16 +705,15 @@ toggleBalanzaModo();
               <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #38bdf8; display: flex; align-items: center; gap: 0.5rem;">
                 <i class="fa-solid fa-bolt"></i> <span><strong>Modo Activo: Motor Local Integrado</strong> (Sin clave configurada. Respuestas instantáneas y offline con más de 36 módulos cubiertos).</span>
               </div>
-            <?php elseif (str_starts_with($currentKey, 'AIzaSy') && strlen($currentKey) >= 35): ?>
+            <?php elseif ((str_starts_with($currentKey, 'AQ.') || str_starts_with($currentKey, 'AIza')) && strlen($currentKey) >= 30): ?>
               <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #34d399; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fa-solid fa-circle-check"></i> <span><strong>Formato de clave de Google válido:</strong> Comienza con <code>AIzaSy</code> (<?= strlen($currentKey) ?> caracteres). Presiona <em>'Probar Clave'</em> para verificar comunicación en vivo con Google.</span>
+                <i class="fa-solid fa-circle-check"></i> <span><strong>Clave de Google AI Studio detectada:</strong> Formato válido (<?= strlen($currentKey) ?> caracteres). Presiona <em>'Probar Clave'</em> para verificar comunicación en vivo con Google.</span>
               </div>
             <?php else: ?>
               <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #f87171; display: flex; align-items: flex-start; gap: 0.5rem;">
                 <i class="fa-solid fa-triangle-exclamation" style="margin-top: 2px;"></i> 
                 <div>
-                  <strong>Formato no compatible con Gemini:</strong> La clave guardada empieza con <code><?= htmlspecialchars(substr($currentKey, 0, 8)) ?>...</code> (<?= strlen($currentKey) ?> caracteres). 
-                  Las API Keys de Google AI Studio siempre empiezan con <code>AIzaSy</code> (39 caracteres). El sistema conmuta automáticamente al <strong>Motor Local</strong> para no fallar.
+                  <strong>Formato no compatible con Gemini:</strong> Las API Keys de Google AI Studio comienzan con <code>AQ.</code> o <code>AIza</code>. El sistema conmuta automáticamente al <strong>Motor Local</strong> para no fallar.
                 </div>
               </div>
             <?php endif; ?>

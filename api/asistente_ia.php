@@ -116,7 +116,7 @@ if ($esPreguntaExterna && !$coincideSistema) {
 // --------------------------------------------------------------------
 // 3. INTENTO DE RESPUESTA MEDIANTE CLOUD LLM (GEMINI) SI ESTÁ CONFIGURADO
 // --------------------------------------------------------------------
-if (!empty($apiKeyGemini) && str_starts_with($apiKeyGemini, 'AIzaSy') && strlen($apiKeyGemini) >= 35) {
+if (!empty($apiKeyGemini) && (str_starts_with($apiKeyGemini, 'AQ.') || str_starts_with($apiKeyGemini, 'AIza')) && strlen($apiKeyGemini) >= 30) {
     $respuestaGemini = consultarGemini($mensaje, $apiKeyGemini, $userRol, $userNombre);
     if ($respuestaGemini !== null) {
         echo json_encode([
@@ -655,12 +655,12 @@ function resolverConocimientoLocal($q, $rol, $nombre) {
  * Con guardrails estrictos de honestidad y verificación instantánea de clave.
  */
 function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
-    // Si la clave no tiene el formato estándar de Google AI Studio, no ejecutar peticiones lentas
-    if (empty($apiKey) || !str_starts_with($apiKey, 'AIzaSy') || strlen($apiKey) < 35) {
+    // Si la clave no tiene el formato estándar de Google AI Studio (AQ. o AIza), no ejecutar peticiones lentas
+    if (empty($apiKey) || (!str_starts_with($apiKey, 'AQ.') && !str_starts_with($apiKey, 'AIza')) || strlen($apiKey) < 30) {
         return null;
     }
 
-    $modelos = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-2.5-pro'];
+    $modelos = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-flash-latest'];
 
     $systemInstruction = "Eres el Asistente Oficial experto del software 'Minimarket POS Web v4.9.0'. "
         . "Tu ÚNICO propósito es guiar y responder dudas sobre el uso de este sistema POS a cajeros y administradores. "
@@ -724,7 +724,10 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'x-goog-api-key: ' . $apiKey
+        ]);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonBody);
         curl_setopt($ch, CURLOPT_TIMEOUT, 7);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);

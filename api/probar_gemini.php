@@ -46,21 +46,21 @@ if (empty($apiKey)) {
     exit;
 }
 
-// Validación de formato Google AI Studio
-if (!str_starts_with($apiKey, 'AIzaSy') || strlen($apiKey) < 35) {
+// Validación de formato Google AI Studio (claves actuales AQ. o clásicas AIza)
+if ((!str_starts_with($apiKey, 'AQ.') && !str_starts_with($apiKey, 'AIza')) || strlen($apiKey) < 30) {
     $prefijo = htmlspecialchars(substr($apiKey, 0, 7));
     $longitud = strlen($apiKey);
     echo json_encode([
         'success' => false,
         'estado' => 'formato_invalido',
-        'mensaje' => "Formato incorrecto: La clave ingresada comienza con '{$prefijo}...' ({$longitud} caracteres). Las API Keys de Google AI Studio siempre comienzan con 'AIzaSy' y tienen 39 caracteres.",
+        'mensaje' => "Formato no reconocido: La clave ingresada comienza con '{$prefijo}...' ({$longitud} caracteres). Las API Keys de Google AI Studio comienzan con 'AQ.' (claves Auth actuales) o 'AIza' (claves estándar).",
         'ayuda' => 'Puedes obtener una API Key gratuita directamente en https://aistudio.google.com/app/apikey'
     ]);
     exit;
 }
 
 // Probar conexión real con los modelos activos de Google AI Studio
-$modelos = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+$modelos = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-flash-latest'];
 $modeloUsado = null;
 $errorGoogle = null;
 $httpCode = 0;
@@ -80,7 +80,10 @@ foreach ($modelos as $modelo) {
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'x-goog-api-key: ' . $apiKey
+    ]);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $bodyPrueba);
     curl_setopt($ch, CURLOPT_TIMEOUT, 6);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
