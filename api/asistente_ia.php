@@ -325,18 +325,14 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             $desglose = "\n\n💳 **Desglose por método de pago hoy:**\n" . implode("\n", $pItems);
         }
         
-        return "📊 **Ventas del Día de Hoy (" . ($contextoEnVivo['fecha_hoy'] ?? date('d/m/Y')) . "):**\n\n"
+        return "📊 **Ventas de hoy (" . ($contextoEnVivo['fecha_hoy'] ?? date('d/m/Y')) . "):**\n\n"
             . "Actualmente llevas recaudado **$montoFmt CLP** en **$cantVentas venta(s) completada(s)**."
             . $desglose . "\n\n"
-            . "🔍 **¿Dónde consultarlo en el sistema?**\n\n"
-            . "1. 🏠 **Panel de Inicio (Dashboard - `index.php`):**\n"
-            . "   * La opción más rápida: al entrar al sistema, la primera tarjeta arriba a la izquierda muestra **'Ventas del Día'** con el monto total y transacciones en tiempo real.\n\n"
-            . "2. 🧾 **Caja y Ventas → Ventas y Comprobantes (`ventas.php`):**\n"
-            . "   * Muestra el listado de cada boleta, factura y ticket emitido hoy, con detalle de productos, cajero y método de pago.\n\n"
-            . "3. 📈 **Reportes → Ventas y Medios de Pago (`reportes.php?tab=ventas`):**\n"
-            . "   * Presiona el botón rápido **'Hoy'** para ver gráficos de venta por hora y comparativas.\n\n"
-            . "4. 💵 **Caja y Ventas → Turnos y Arqueo (`caja.php`):**\n"
-            . "   * Si solo deseas revisar lo acumulado en tu turno actual abierto en esta caja.";
+            . "🔍 **Dónde revisarlo en el sistema:**\n\n"
+            . "• **En el Inicio:** En la tarjeta principal **'Ventas del Día'** arriba a la izquierda lo ves al instante en tiempo real.\n"
+            . "• **En Caja y Ventas → Ventas y Comprobantes:** Si quieres revisar cada boleta, factura o ticket emitido hoy con su detalle de productos y cajero.\n"
+            . "• **En Reportes → Ventas y Medios de Pago:** Presiona el botón rápido **'Hoy'** para ver gráficos de venta por hora y desglose por tarjetas o efectivo.\n"
+            . "• **En Turnos y Arqueo:** Si solo deseas revisar lo acumulado en tu turno actual en esta caja registradora.";
     }
 
     // 2.1 Abrir Caja y Turnos
@@ -797,7 +793,7 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre, $contextoEnVivo = []
         return null;
     }
 
-    $modelos = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-flash-latest'];
+    $modelos = ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-flash-latest'];
 
     $montoCLP = '$' . number_format($contextoEnVivo['ventas_monto'] ?? 0, 0, ',', '.');
     $cantVentas = (int)($contextoEnVivo['ventas_cant'] ?? 0);
@@ -853,13 +849,13 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre, $contextoEnVivo = []
         . "- Administración -> Usuarios y Permisos (usuarios.php): Roles Administrador, Supervisor y Cajero, con clave de supervisor para autorizaciones especiales en caja y cierres de turno. "
         . "- Configuración (configuracion.php): Logo, datos del local, tema oscuro/claro, boleta SII/DTE (OpenFactura, Haulmer, Mock, Comprobante Local), políticas de supervisión de caja (clave supervisor al cancelar o descontar), impresora térmica directa (POSBANK A11 Prime 80mm) y Asistente de IA. "
         . "REGLA OBLIGATORIA PARA CONSULTAS SOBRE 'CUÁNTO VENDÍ', 'VENTAS DE HOY' O 'CÓMO SÉ CUÁNTO VENDÍ': "
-        . "1. RESPONDE DE INMEDIATO con la cifra real acumulada del día usando los DATOS EN TIEMPO REAL DEL SISTEMA HOY inyectados arriba (ejemplo: 'Hoy llevas vendido \$X CLP en N ventas completadas'). Si lleva \$0, acláralo amablemente. "
-        . "2. Explica de forma concisa y directa los accesos principales del sistema para consultarlo: "
-        . "   * Opción instantánea: En el Panel de Inicio (Dashboard / index.php), en la tarjeta principal 'Ventas del Día'. "
-        . "   * Para revisar cada boleta o comprobante: En Caja y Ventas -> Ventas y Comprobantes (ventas.php). "
-        . "   * Para gráficos por hora y medios de pago: En Reportes -> Ventas y Medios de Pago (reportes.php?tab=ventas) seleccionando 'Hoy'. "
-        . "   * Si solo quiere su turno en caja: En Caja y Ventas -> Turnos y Arqueo (caja.php). "
-        . "PROHIBICIÓN ESTRICTA: NO MENCIONES las palabras 'Cierre Z', 'fiscal' ni 'arqueo ciego' en respuestas sobre ventas del día. La Z no viene al caso para consultar ventas diarias. No agregues notas ni advertencias sobre la Z. Limítate a responder lo pedido con la cifra y los accesos del sistema de forma limpia y directa. "
+        . "1. RESPONDE DE INMEDIATO con la cifra real acumulada del día de forma natural y cercana (ejemplo: 'Hoy llevas vendido \$X en N ventas'). Si lleva \$0, acláralo con amabilidad. "
+        . "2. Explica con naturalidad los lugares del sistema para consultarlo: "
+        . "   * En la pantalla de Inicio: en la tarjeta 'Ventas del Día' arriba a la izquierda lo ves al instante. "
+        . "   * En Caja y Ventas -> Ventas y Comprobantes: para ver el detalle de cada boleta o comprobante emitido hoy. "
+        . "   * En Reportes -> Ventas y Medios de Pago: seleccionando 'Hoy' para ver gráficos y medios de pago. "
+        . "   * En Turnos y Arqueo: si solo deseas ver lo acumulado en tu caja física actual. "
+        . "PROHIBICIÓN ESTRICTA: NO MENCIONES en absoluto las palabras 'Cierre Z', 'fiscal' ni 'arqueo ciego' en respuestas sobre ventas del día. La Z no viene al caso para consultar ventas. No agregues advertencias ni notas innecesarias sobre la Z. "
         . "FUNCIONES QUE EL SISTEMA NO POSEE (DEBES DECLARAR CON HONESTIDAD QUE NO EXISTEN): "
         . "1. WhatsApp en cotizaciones o ventas: NO existe botón de envío por WhatsApp ni PDF. Aclara que se consulta en pantalla o se pasa 'A la caja'. "
         . "2. Pago de sueldos o nóminas: NO existe módulo de nóminas ni recursos humanos. Sugiere registrar 'Retiro de Caja' con motivo. "
@@ -870,8 +866,11 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre, $contextoEnVivo = []
         . "7. Préstamos financieros personales: No existe módulo de créditos bancarios. "
         . "8. Contabilidad general completa de partida doble (Libro Mayor, Balance de 8 columnas, F29): Para fines contables se exportan las ventas y cierres Z al contador. "
         . "9. Biometría o huella digital: Solo usuario y contraseña. "
-        . "REGLAS DE FORMATO Y ESTILO: "
-        . "- Responde con amabilidad, profesionalismo y concisión. Usa negritas, pasos numerados (1., 2., 3.) y atajos como <kbd>F12</kbd> o <kbd>Alt + I</kbd>. "
+        . "REGLAS CRÍTICAS DE LENGUAJE NATURAL Y HUMANO (OBLIGATORIAS): "
+        . "- Habla de forma natural, cálida, fluida y conversacional, como un colega experto que trabaja en el local junto a $nombre, NUNCA como un manual técnico o un robot. "
+        . "- CERO RIGIDEZ: Evita sonar acartonado o burocrático. Usa expresiones naturales y directas (ej: 'puedes verlo al tiro', 'basta con presionar', 'lo encuentras en', 'con eso queda listo'). "
+        . "- NUNCA menciones nombres de archivos técnicos con extensión '.php' (como 'index.php', 'ventas.php' o 'caja.php') en medio de tus oraciones. Los cajeros y administradores no ven nombres de archivos, ven pantallas y nombres de menús. Habla siempre usando los nombres reales de los menús y botones (ej: 'en la pantalla de Inicio', 'en el menú Caja y Ventas → Ventas y Comprobantes', 'en el Centro de Reportes', 'en Turnos y Arqueo'). "
+        . "- Respuestas al grano y sin rodeos: Si la pregunta es sencilla, no des explicaciones largas ni introducciones innecesarias. "
         . "- El usuario actual se llama '$nombre' y tiene el rol de '$rol'.";
 
     $body = [
@@ -884,7 +883,7 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre, $contextoEnVivo = []
             ]
         ],
         'generationConfig' => [
-            'temperature' => 0.1,
+            'temperature' => 0.4,
             'maxOutputTokens' => 800
         ]
     ];
@@ -901,15 +900,15 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre, $contextoEnVivo = []
             'x-goog-api-key: ' . $apiKey
         ]);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonBody);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 7);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 4);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
         $res = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        // Si la clave no es válida (400), no reintentar otros modelos inútilmente
-        if ($httpCode === 400) {
+    // Si la clave no es válida (400) o hay saturación momentánea en Google (503 / 429), pasar de inmediato al motor local
+        if ($httpCode === 400 || $httpCode === 503 || $httpCode === 429) {
             break;
         }
 
