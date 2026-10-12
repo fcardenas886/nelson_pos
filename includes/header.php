@@ -183,13 +183,14 @@ $changelogActual = APP_CHANGELOG[APP_VERSION] ?? [];
 
     <!-- Grupo: Mantenedores -->
     <li class="nav-item has-dropdown">
-      <div class="nav-link <?= in_array($currentPage, ['productos.php', 'actualizar_precios.php', 'categorias.php', 'clientes.php', 'promociones.php']) ? 'active' : '' ?>" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
+      <div class="nav-link <?= in_array($currentPage, ['productos.php', 'actualizar_precios.php', 'imprimir_codigos_a4.php', 'categorias.php', 'clientes.php', 'promociones.php']) ? 'active' : '' ?>" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
         <i class="fa-solid fa-folder-open"></i> Mantenedores <i class="fa-solid fa-chevron-down nav-caret"></i>
       </div>
       <ul class="dropdown-menu">
         <?php if ($esSupervisorNav): ?>
         <li><a href="productos.php" class="dropdown-item"><i class="fa-solid fa-box"></i> Productos y Precios</a></li>
         <li><a href="actualizar_precios.php" class="dropdown-item"><i class="fa-solid fa-bolt" style="color: #f59e0b;"></i> Actualizador Rápido Precios</a></li>
+        <li><a href="imprimir_codigos_a4.php" class="dropdown-item"><i class="fa-solid fa-print" style="color: #38bdf8;"></i> Imprimir Códigos A4</a></li>
         <li><a href="categorias.php" class="dropdown-item"><i class="fa-solid fa-folder"></i> Categorías</a></li>
         <?php endif; ?>
         <li><a href="clientes.php" class="dropdown-item"><i class="fa-solid fa-users"></i> Clientes y Fiado</a></li>

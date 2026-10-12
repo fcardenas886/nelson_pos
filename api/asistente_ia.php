@@ -310,20 +310,31 @@ function resolverConocimientoLocal($q, $rol, $nombre) {
             . "2. Si tu balanza es sin etiqueta, al seleccionar el producto se abrirá una ventana donde puedes ingresar los **kilos** (y calcula el total) o ingresar el **monto en pesos** (y calcula los kilos equivalentes).";
     }
 
-    // 10. Códigos EAN-8 y Etiquetas Góndola
-    if (str_contains($q, 'ean') || str_contains($q, 'etiqueta') || str_contains($q, 'generar código') || str_contains($q, 'codigo de barra') || str_contains($q, 'imprimir codigo') || str_contains($q, 'imprimir código')) {
-        if (str_contains($q, 'a4') || str_contains($q, 'hoja normal') || str_contains($q, 'pliego') || str_contains($q, 'carta')) {
-            return "⚠️ **El sistema actualmente NO cuenta con una plantilla para imprimir grillas de códigos en hoja normal A4.**\n\n"
-                . "📌 **¿Cómo funciona la impresión actual?**\n"
-                . "En **Maestros → Productos y Precios**, al presionar el botón de código de barras de un producto, el sistema genera **1 sola etiqueta individual** pensada para impresoras térmicas de pegatinas (formato sticker 50x30mm o papel continuo de góndola).\n\n"
-                . "💡 *Si necesitas tener códigos a mano en el mostrador para productos sin código (como pan o pesables), la alternativa actual es anotar su código o PLU de 4 dígitos para digitarlo en el POS.*";
+    // 10. Códigos EAN-8 y Etiquetas (Individuales y Hoja A4)
+    if (str_contains($q, 'ean') || str_contains($q, 'etiqueta') || str_contains($q, 'generar código') || str_contains($q, 'codigo de barra') || str_contains($q, 'imprimir codigo') || str_contains($q, 'imprimir código') || str_contains($q, 'a4') || str_contains($q, 'pliego')) {
+        if (str_contains($q, 'a4') || str_contains($q, 'hoja normal') || str_contains($q, 'pliego') || str_contains($q, 'carta') || str_contains($q, 'grilla')) {
+            return "🖨️ **Impresión de Códigos de Barra en Hoja A4 (`imprimir_codigos_a4.php`):**\n\n"
+                . "El sistema cuenta con un módulo especializado para imprimir en papel de oficina estándar A4:\n\n"
+                . "1. **¿Dónde ingresar?**\n"
+                . "   * En el menú superior **Mantenedores → Imprimir Códigos A4** o desde el botón azul en **Maestros → Productos**.\n"
+                . "   * También desde el catálogo, presionando el botón **'Pliego A4'** en el modal de etiqueta de cualquier producto.\n\n"
+                . "2. **Modos Disponibles:**\n"
+                . "   * 🏷️ **Pliego de Etiquetas:** Genera hojas de stickers o recortables (12, 24, 30, 48 o cantidad personalizada) de un producto, o activa **'Pliego Mixto'** para imprimir 1 etiqueta de cada código interno del local.\n"
+                . "   * 📋 **Carta de Mostrador:** Genera un catálogo escaneable organizado por categorías para tener en el mesón de caja y pistolear artículos pesables o sin código comercial.\n\n"
+                . "3. **Opciones de Configuración:**\n"
+                . "   * Selector de columnas: **2, 3 o 4 Columnas** por hoja.\n"
+                . "   * Filtro ⭐ **Solo Internos** para aislar productos propios/pesables frente a comerciales.\n"
+                . "   * Mostrar u ocultar precio, nombre del local y líneas de corte punteadas.\n\n"
+                . "4. Presiona el botón verde **'IMPRIMIR HOJA A4'** o el atajo <kbd>Ctrl + P</kbd>.";
         }
 
         return "🏷️ **Generación de Códigos de Barra EAN-8 y Etiquetas:**\n\n"
             . "1. Ve a **Maestros → Productos y Precios** y crea o edita un producto.\n"
             . "2. Si el producto no tiene código de barra de fábrica (ej. pan, artesanías, empanadas), presiona el botón **'⚡ Generar EAN-8'**.\n"
             . "3. El sistema le asignará un código estándar oficial de 8 dígitos.\n"
-            . "4. En la tabla de productos, presiona el botón con el ícono de **Código de Barras** para abrir la ventana de previsualización e imprimir la **etiqueta individual** (con nombre, código de barras SVG y precio opcional) compatible con impresoras térmicas de stickers adhesivos.";
+            . "4. **Opciones de Impresión:**\n"
+            . "   * **Etiqueta Individual (Térmica 50x30mm):** Presiona el ícono de Código de Barras en la fila del producto para imprimir en rollo de stickers.\n"
+            . "   * **Hoja Normal A4:** Presiona **'Imprimir Códigos A4'** en la barra superior para generar pliegos recortables o catálogos de mostrador.";
     }
 
     // 11. Promociones y Ofertas
@@ -432,15 +443,16 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
     // Modelos admitidos en orden de preferencia
     $modelos = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-2.5-pro'];
 
-    $systemInstruction = "Eres el Asistente Oficial experto del software 'Minimarket POS Web v4.8.0'. "
+    $systemInstruction = "Eres el Asistente Oficial experto del software 'Minimarket POS Web v4.9.0'. "
         . "Tu ÚNICO propósito es guiar y responder dudas sobre el uso de este sistema POS a cajeros y administradores. "
         . "ESTRUCTURA DE MÓDULOS DEL SISTEMA (LO QUE SÍ TIENE): "
         . "- Caja POS (pos.php): Venta rápida, búsqueda por código de barra o nombre, cobro con F12 (Efectivo, Tarjeta, Transferencia, Fiado/Crédito interno si tiene cupo, Puntos, Pago Mixto con cálculo de vuelto o monto faltante). Pausar ventas y recuperarlas en botón 'Pendientes'. Abrir gaveta con Ctrl+F10. "
         . "- Turnos y Arqueo (caja.php): Apertura con monto inicial, asignación de caja física; cierre con Arqueo Ciego (conteo físico de efectivo, vouchers y transferencias), clave de supervisor y opción Cierre Z. Botón Retiro / Ingreso para justificar salidas de efectivo. "
         . "- Operaciones -> Cotizaciones (cotizaciones.php): Crear presupuestos/notas de pedido con cliente y productos, ver detalle en pantalla (icono de ojo), anular, y botón 'A la caja' para transferir los productos directo al carrito del POS para cobrar con F12. ATENCIÓN: El sistema NO tiene botón para enviar por WhatsApp, ni enviar por email, ni generar PDF; no inventes esas funciones. "
+        . "- Mantenedores -> Imprimir Códigos A4 (imprimir_codigos_a4.php): Módulo especializado para imprimir en hoja de papel normal A4. Incluye modo Pliego de Etiquetas (stickers recortables de 1 producto o pliego mixto con 1 de cada código interno), modo Carta de Mostrador (catálogo escaneable organizado por categorías para caja), selector de 2/3/4 columnas, filtro ⭐ 'Solo Internos' y líneas de corte punteadas. "
         . "- Operaciones -> Recepción de Compras (recepcion_compras.php): En 2 fases: Fase 1 ingresa stock y costo de factura del proveedor; Fase 2 actualiza precios con recálculo de margen sobre costo. "
         . "- Operaciones -> Devoluciones y Anulaciones (ventas.php, devoluciones.php): Anulación total reponiendo stock (incluso packs) o vales de devolución. "
-        . "- Inventario -> Productos (productos.php): Catálogo, generar código EAN-8, generar PLU para balanza pesable, stock mínimo, e imprimir etiquetas individuales (1 por 1 para rollo de stickers térmicos 50x30mm). ATENCIÓN: El sistema NO tiene plantilla para imprimir en hoja A4 ni grilla de múltiples códigos. "
+        . "- Inventario -> Productos (productos.php): Catálogo, generar código EAN-8, generar PLU para balanza pesable, stock mínimo, e imprimir etiquetas individuales (1 por 1 para rollo de stickers térmicos 50x30mm) o enlace directo a Imprimir Códigos A4. "
         . "- Inventario -> Kardex (kardex.php): Trazabilidad de movimientos con movimiento INICIAL de apertura de catálogo, buscador predictivo, tarjeta resumen con KPIs (Stock Inicial, Entradas +, Salidas -, Saldo Actual =), filtros y Excel. "
         . "- Inventario -> Ajustes de Stock (ajustes_stock.php) y Mermas (reportes.php?tab=mermas): Registro clasificado de bajas (Vencimiento, Daño/Rotura, Pérdida, Consumo Interno) congelando costo unitario. "
         . "- Maestros -> Clientes y Créditos (clientes.php): Cupo de fiado, pagos/abonos con algoritmo FIFO, y acumulación/canje de puntos (1 punto = $1). "
@@ -450,7 +462,7 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre) {
         . "REGLAS CRÍTICAS DE PRECISIÓN Y HONESTIDAD: "
         . "1. Responde ÚNICAMENTE sobre las funciones REALES de Minimarket POS. NUNCA inventes funciones, botones o integraciones que no existen. "
         . "2. SI PREGUNTA POR WHATSAPP EN COTIZACIONES O VENTAS: Aclara explícitamente que el sistema NO tiene integración de envío por WhatsApp ni exportación a PDF; explica que la cotización se consulta en pantalla con el botón 'Ver detalle' y se carga al POS con el botón 'A la caja'. "
-        . "3. SI PREGUNTA POR IMPRIMIR CÓDIGOS EN HOJA NORMAL A4: Aclara que actualmente el sistema solo cuenta con impresión de etiquetas individuales (1 a 1 para impresora térmica de pegatinas 50x30mm) y que NO incluye generador de pliegos o catálogo en hoja A4. "
+        . "3. SI PREGUNTA POR IMPRIMIR CÓDIGOS EN HOJA NORMAL A4: Explica que el sistema SÍ cuenta con el módulo de Impresión A4 en Mantenedores -> Imprimir Códigos A4 (imprimir_codigos_a4.php), con modo Pliego de Etiquetas, Pliego Mixto de internos y Carta de Mostrador para caja. "
         . "4. SI PREGUNTA POR NÓMINAS / SUELDOS: Aclara que no hay módulo de sueldos y ofrece como alternativa 'Retiro de Caja' con motivo. "
         . "5. Si el usuario pregunta algo ajeno al sistema (política, cocina, religión, ciencia, chistes), declina amablemente y reorienta a las funciones del POS. "
         . "6. Usa formato claro con negritas, pasos numerados (1., 2., 3.) y atajos como <kbd>F12</kbd> o <kbd>Alt + I</kbd>. "

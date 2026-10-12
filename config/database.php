@@ -1,16 +1,26 @@
 <?php
 // Version de la app: unica fuente de verdad, para que login y footer nunca queden desincronizados.
-define('APP_VERSION', 'v4.8.0');
+define('APP_VERSION', 'v4.9.0');
 
 // Novedades reales por versión, para la pantalla de bienvenida y el módulo "Acerca de".
 // Registra la cronología completa de la evolución del sistema desde su inicio.
 define('APP_CHANGELOG', [
-    'v4.8.0' => [
+    'v4.9.0' => [
         'Agente Asistente de IA Integrado (Tipo Chat): Widget interactivo flotante en todas las pantallas para responder dudas y guiar en el uso de las funciones del sistema (atajo Alt + I).',
         'Guardrails Estrictos de Operación: Especializado exclusivamente en procedimientos del POS, caja, inventario, compras, mermas y reportes, declinando amablemente preguntas ajenas a la tienda.',
         'Tratamiento Honesto de Funciones Ausentes: Si una función no está disponible directamente, el asistente no inventa rutas inexistentes y ofrece la alternativa práctica dentro del sistema (ej. retiros de caja para gastos/sueldos o notas de pedido para reservas).',
         'Motor Dual Híbrido: Base de conocimiento estructurada y offline con más de 35 guías paso a paso, con soporte opcional para Google Gemini AI mediante API Key en Configuración.',
         'Sugerencias Rápidas y Persistencia: Chips interactivos de preguntas frecuentes, formato enriquecido con atajos de teclado y memoria de sesión entre pantallas.',
+    ],
+    'v4.8.0' => [
+        'Módulo de Impresión de Códigos de Barra en Hoja A4: Sistema integral para generar pliegos de stickers recortables y catálogos de mostrador en papel estándar de oficina A4.',
+        'Diseño Ergonómico en 2 Columnas: Panel lateral ampliado a 580px con controles organizados en grilla horizontal para que todas las opciones quepan 100% en pantalla sin scroll vertical.',
+        'Modo Pliego de Etiquetas y Pliego Mixto: Impresión de stickers para un producto o pliego mixto con 1 etiqueta de cada código interno del local (EAN-8 / PLU / Balanza) para optimizar papel.',
+        'Modo Carta / Catálogo de Mostrador: Hoja de consulta rápida organizada por categorías para el mesón de caja, facilitando el escaneo de pesables y productos sin código comercial.',
+        'Previsualizador Calibrado con Zoom: Vista previa A4 con escala inicial compacta al 70% y controles rápidos (60%, 70%, 80%, 100%), garantizando escala 100% nítida al imprimir.',
+        'Filtro de Códigos Internos (⭐): Aislamiento con un clic de productos propios y pesables frente a productos comerciales de fábrica.',
+        'Opciones de Diseño Flexibles: Configuración en vivo para mostrar/ocultar precio, nombre del local, líneas de corte punteadas y selector de 2, 3 o 4 columnas por hoja.',
+        'Integración en Catálogo: Acceso directo desde Mantenedores, cabecera de Catálogo de Productos y botón "Pliego A4" dentro de la etiqueta individual.',
     ],
     'v4.7.2' => [
         'Kardex con Stock Inicial de Apertura: Registro y visualización del movimiento inicial de apertura de catálogo (INICIAL) para todos los productos, garantizando trazabilidad completa desde el origen.',
