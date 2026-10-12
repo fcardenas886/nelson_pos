@@ -34,6 +34,22 @@
       </div>
     </div>
 
+    <!-- Filtro de Origen: Todos vs Solo Códigos Internos -->
+    <div class="a4-section">
+      <label class="a4-section-title">ORIGEN DEL CÓDIGO</label>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem;">
+        <button type="button" class="btn btn-secondary btn-sm active" id="btnFiltroTipoTodos" onclick="setFiltroTipoCodigo('todos')">
+          <i class="fa-solid fa-boxes-stacked"></i> Todos
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btnFiltroTipoInternos" onclick="setFiltroTipoCodigo('internos')" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);">
+          <i class="fa-solid fa-star"></i> Solo Internos
+        </button>
+      </div>
+      <small id="txtDescFiltroTipo" style="display: block; color: var(--text-muted); font-size: 0.72rem; margin-top: 0.4rem; line-height: 1.3;">
+        Mostrando todos los productos del catálogo.
+      </small>
+    </div>
+
     <!-- CONTROLES ESPECÍFICOS: MODO PLIEGO -->
     <div id="panelModoPliego" class="a4-section">
       <label class="a4-section-title">SELECCIÓN DE PRODUCTO</label>
@@ -47,11 +63,18 @@
                     data-codigo="<?= htmlspecialchars($prod['CodigoBarras'] ?: $prod['CodigoPLU'] ?: '') ?>"
                     data-precio="<?= (int)$prod['PrecioVenta'] ?>"
                     data-cat="<?= htmlspecialchars($prod['Categoria']) ?>"
+                    data-interno="<?= (int)$prod['EsCodigoInterno'] ?>"
                     <?= ($preselectedId === (int)$prod['ProductoID']) ? 'selected' : '' ?>>
               <?= htmlspecialchars($prod['Nombre']) ?> (<?= $prod['CodigoBarras'] ?: 'PLU: ' . $prod['CodigoPLU'] ?>) - $<?= number_format($prod['PrecioVenta'], 0, ',', '.') ?>
             </option>
           <?php endforeach; ?>
         </select>
+
+        <div id="btnPliegoMixtoWrap" style="margin-top: 0.5rem; display: none;">
+          <button type="button" class="btn btn-secondary btn-sm btn-block" id="btnPliegoMixto" onclick="togglePliegoMixtoInternos()" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 600; font-size: 0.78rem;">
+            <i class="fa-solid fa-layer-group"></i> Llenar pliego con todos los internos (1 de c/u)
+          </button>
+        </div>
       </div>
 
       <label class="a4-section-title">CANTIDAD DE ETIQUETAS</label>
@@ -184,6 +207,7 @@
   window.A4_TODOS_PRODUCTOS = <?= json_encode($todosProductos) ?>;
   window.A4_PRESELECTED_ID = <?= (int)$preselectedId ?>;
   window.A4_PRESELECTED_MODO = <?= json_encode($preselectedModo) ?>;
+  window.A4_PRESELECTED_SOLO_INTERNOS = <?= (int)$preselectedSoloInternos ?>;
 </script>
 
 <style>
@@ -575,31 +599,135 @@ let columnasActuales = 3;
 let cantidadPliego = 24;
 let productoSeleccionadoId = window.A4_PRESELECTED_ID || 0;
 let productosCatalogoSeleccionados = new Set();
+let filtroTipoActual = (window.A4_PRESELECTED_SOLO_INTERNOS === 1) ? 'internos' : 'todos';
+let pliegoMixtoActivo = false;
 
 document.addEventListener('DOMContentLoaded', function() {
   initModuloA4();
 });
 
 function initModuloA4() {
-  // Inicializar productos seleccionados para el catálogo (todos por defecto)
+  setFiltroTipoCodigo(filtroTipoActual, true);
+  cambiarModo(modoActual);
+}
+
+function setFiltroTipoCodigo(tipo, omitirRegenerar = false) {
+  filtroTipoActual = tipo;
+
+  const btnTodos = document.getElementById('btnFiltroTipoTodos');
+  const btnInternos = document.getElementById('btnFiltroTipoInternos');
+  if (btnTodos) btnTodos.classList.toggle('active', tipo === 'todos');
+  if (btnInternos) btnInternos.classList.toggle('active', tipo === 'internos');
+
+  const desc = document.getElementById('txtDescFiltroTipo');
+  if (desc) {
+    desc.textContent = (tipo === 'internos')
+      ? 'Mostrando solo productos con código interno propio (EAN-8, PLU, balanza o creados por el local).'
+      : 'Mostrando todos los productos del catálogo.';
+  }
+
+  const wrapMixto = document.getElementById('btnPliegoMixtoWrap');
+  if (wrapMixto) {
+    wrapMixto.style.display = (tipo === 'internos') ? 'block' : 'none';
+  }
+  if (tipo !== 'internos') {
+    pliegoMixtoActivo = false;
+    actualizarBotonPliegoMixtoUI();
+  }
+
+  const sub = document.getElementById('a4CatalogoSubtitulo');
+  if (sub) {
+    sub.textContent = (tipo === 'internos')
+      ? 'Catálogo de Códigos Internos del Local (EAN-8 / PLU)'
+      : 'Catálogo de Códigos de Barra para Mostrador';
+  }
+
+  poblarSelectProductoPliego();
+
+  // Actualizar selección de productos en catálogo
+  productosCatalogoSeleccionados.clear();
   window.A4_TODOS_PRODUCTOS.forEach(p => {
     if (p.CodigoBarras || p.CodigoPLU) {
-      productosCatalogoSeleccionados.add(p.ProductoID);
+      if (tipo === 'internos') {
+        if (p.EsCodigoInterno == 1) productosCatalogoSeleccionados.add(p.ProductoID);
+      } else {
+        productosCatalogoSeleccionados.add(p.ProductoID);
+      }
     }
   });
 
-  // Si no había producto preseleccionado para el pliego, tomar el primero disponible
-  if (!productoSeleccionadoId && window.A4_TODOS_PRODUCTOS.length > 0) {
-    const primerValido = window.A4_TODOS_PRODUCTOS.find(p => p.CodigoBarras || p.CodigoPLU);
-    if (primerValido) {
-      productoSeleccionadoId = primerValido.ProductoID;
-      const selectP = document.getElementById('selectProductoPliego');
-      if (selectP) selectP.value = productoSeleccionadoId;
-    }
+  renderizarChecklistCatalogo();
+
+  if (!omitirRegenerar) {
+    regenerarVistaA4();
+  }
+}
+
+function poblarSelectProductoPliego() {
+  const sel = document.getElementById('selectProductoPliego');
+  if (!sel) return;
+
+  const valActual = productoSeleccionadoId;
+  sel.innerHTML = '<option value="">-- Elige un producto --</option>';
+
+  let lista = window.A4_TODOS_PRODUCTOS;
+  if (filtroTipoActual === 'internos') {
+    lista = lista.filter(p => p.EsCodigoInterno == 1);
   }
 
-  renderizarChecklistCatalogo();
-  cambiarModo(modoActual);
+  let existeActual = false;
+  lista.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.ProductoID;
+    opt.dataset.nombre = p.Nombre;
+    opt.dataset.codigo = p.CodigoBarras || p.CodigoPLU || '';
+    opt.dataset.precio = p.PrecioVenta;
+    opt.dataset.cat = p.Categoria;
+    opt.dataset.interno = p.EsCodigoInterno;
+    const tipoBadge = (p.EsCodigoInterno == 1) ? '⭐ ' : '';
+    opt.textContent = `${tipoBadge}${p.Nombre} (${p.CodigoBarras || 'PLU: ' + p.CodigoPLU}) - $${Number(p.PrecioVenta).toLocaleString('es-CL')}`;
+
+    if (p.ProductoID === valActual) {
+      opt.selected = true;
+      existeActual = true;
+    }
+    sel.appendChild(opt);
+  });
+
+  if (!existeActual && lista.length > 0) {
+    productoSeleccionadoId = lista[0].ProductoID;
+    sel.value = productoSeleccionadoId;
+  } else if (lista.length === 0) {
+    productoSeleccionadoId = 0;
+    sel.value = '';
+  }
+}
+
+function togglePliegoMixtoInternos() {
+  pliegoMixtoActivo = !pliegoMixtoActivo;
+  actualizarBotonPliegoMixtoUI();
+  regenerarVistaA4();
+}
+
+function actualizarBotonPliegoMixtoUI() {
+  const btn = document.getElementById('btnPliegoMixto');
+  const sel = document.getElementById('selectProductoPliego');
+  if (!btn) return;
+  if (pliegoMixtoActivo) {
+    btn.classList.add('active');
+    btn.style.background = '#0284c7';
+    btn.style.color = '#ffffff';
+    btn.style.borderColor = '#38bdf8';
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Pliego Mixto Activo (Todos los internos)';
+    if (sel) sel.disabled = true;
+  } else {
+    btn.classList.remove('active');
+    btn.style.background = '';
+    btn.style.color = '#38bdf8';
+    btn.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+    btn.innerHTML = '<i class="fa-solid fa-layer-group"></i> Llenar pliego con todos los internos (1 de c/u)';
+    if (sel) sel.disabled = false;
+  }
 }
 
 function cambiarModo(modo) {
@@ -679,6 +807,7 @@ function renderizarChecklistCatalogo(filtroTexto = '', filtroCat = 'todas') {
     const tieneCod = Boolean(p.CodigoBarras || p.CodigoPLU);
     if (!tieneCod) return;
 
+    if (filtroTipoActual === 'internos' && p.EsCodigoInterno != 1) return;
     if (filtroCat !== 'todas' && String(p.CategoriaID) !== String(filtroCat)) return;
 
     if (filtroTexto) {
@@ -694,10 +823,11 @@ function renderizarChecklistCatalogo(filtroTexto = '', filtroCat = 'todas') {
 
     const row = document.createElement('label');
     row.className = 'a4-check-item';
+    const tagInterno = (p.EsCodigoInterno == 1) ? '<span style="color:#38bdf8; font-size:0.7rem; margin-right:4px;">⭐</span>' : '';
     row.innerHTML = `
       <input type="checkbox" value="${p.ProductoID}" ${isChecked ? 'checked' : ''} onchange="toggleItemCatalogo(${p.ProductoID}, this.checked)">
       <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-        ${escapeHtml(p.Nombre)}
+        ${tagInterno}${escapeHtml(p.Nombre)}
       </span>
       <strong style="color:var(--success); font-size:0.75rem;">$${Number(p.PrecioVenta).toLocaleString('es-CL')}</strong>
     `;
@@ -705,7 +835,10 @@ function renderizarChecklistCatalogo(filtroTexto = '', filtroCat = 'todas') {
   });
 
   const txtTot = document.getElementById('txtTotalItemsCatalogo');
-  if (txtTot) txtTot.textContent = `${visibles} productos disponibles`;
+  if (txtTot) {
+    const sufijo = (filtroTipoActual === 'internos') ? 'códigos internos disponibles' : 'productos disponibles';
+    txtTot.textContent = `${visibles} ${sufijo}`;
+  }
 }
 
 function filtrarCategoriaCatalogo() {
@@ -748,6 +881,7 @@ function toggleSeleccionarTodos() {
 
   const visibles = window.A4_TODOS_PRODUCTOS.filter(p => {
     if (!p.CodigoBarras && !p.CodigoPLU) return false;
+    if (filtroTipoActual === 'internos' && p.EsCodigoInterno != 1) return false;
     if (cat !== 'todas' && String(p.CategoriaID) !== String(cat)) return false;
     if (texto && !p.Nombre.toLowerCase().includes(texto)) return false;
     return true;
@@ -779,28 +913,44 @@ function regenerarVistaA4() {
   let itemsParaRenderizar = [];
 
   if (modoActual === 'pliego') {
-    // Repetir el producto seleccionado X veces
-    const prod = window.A4_TODOS_PRODUCTOS.find(p => p.ProductoID === productoSeleccionadoId);
-    if (!prod) {
-      grid.innerHTML = '<div style="grid-column: 1 / -1; padding: 3rem; text-align: center; color: #64748b; font-size: 1rem;">Selecciona un producto para generar el pliego de etiquetas.</div>';
-      actualizarBadgePaginas(0);
-      return;
-    }
+    if (pliegoMixtoActivo) {
+      const prodsInternos = window.A4_TODOS_PRODUCTOS.filter(p => p.EsCodigoInterno == 1 && (p.CodigoBarras || p.CodigoPLU));
+      if (prodsInternos.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1 / -1; padding: 3rem; text-align: center; color: #64748b; font-size: 1rem;">No hay productos con código interno registrados.</div>';
+        actualizarBadgePaginas(0);
+        return;
+      }
+      for (let i = 0; i < cantidadPliego; i++) {
+        itemsParaRenderizar.push(prodsInternos[i % prodsInternos.length]);
+      }
+    } else {
+      // Repetir el producto seleccionado X veces
+      const prod = window.A4_TODOS_PRODUCTOS.find(p => p.ProductoID === productoSeleccionadoId);
+      if (!prod) {
+        grid.innerHTML = '<div style="grid-column: 1 / -1; padding: 3rem; text-align: center; color: #64748b; font-size: 1rem;">Selecciona un producto para generar el pliego de etiquetas.</div>';
+        actualizarBadgePaginas(0);
+        return;
+      }
 
-    for (let i = 0; i < cantidadPliego; i++) {
-      itemsParaRenderizar.push(prod);
+      for (let i = 0; i < cantidadPliego; i++) {
+        itemsParaRenderizar.push(prod);
+      }
     }
   } else {
     // Catálogo: renderizar productos seleccionados
     const catFiltro = document.getElementById('selectCategoriaCatalogo').value;
     itemsParaRenderizar = window.A4_TODOS_PRODUCTOS.filter(p => {
       if (!productosCatalogoSeleccionados.has(p.ProductoID)) return false;
+      if (filtroTipoActual === 'internos' && p.EsCodigoInterno != 1) return false;
       if (catFiltro !== 'todas' && String(p.CategoriaID) !== String(catFiltro)) return false;
       return true;
     });
 
     if (itemsParaRenderizar.length === 0) {
-      grid.innerHTML = '<div style="grid-column: 1 / -1; padding: 3rem; text-align: center; color: #64748b; font-size: 1rem;">No hay productos seleccionados para el catálogo. Marca las casillas en el panel izquierdo.</div>';
+      const msg = (filtroTipoActual === 'internos') 
+        ? 'No hay productos con código interno seleccionados. Marca las casillas en el panel izquierdo.'
+        : 'No hay productos seleccionados para el catálogo. Marca las casillas en el panel izquierdo.';
+      grid.innerHTML = `<div style="grid-column: 1 / -1; padding: 3rem; text-align: center; color: #64748b; font-size: 1rem;">${msg}</div>`;
       actualizarBadgePaginas(0);
       return;
     }

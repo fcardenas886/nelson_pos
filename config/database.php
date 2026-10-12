@@ -8,6 +8,7 @@ define('APP_CHANGELOG', [
     'v4.7.3' => [
         'Módulo de Impresión de Códigos de Barra en Hoja A4: Nueva herramienta especializada para generar e imprimir códigos en papel estándar de oficina A4.',
         'Modo Pliego de Etiquetas A4: Generación de pliegos de stickers recortables o papel autoadhesivo para 1 o varios productos (12, 24, 30 o cantidad personalizada) con líneas de corte punteadas.',
+        'Filtro y Pliego para Códigos Internos (EAN-8 / PLU): Acceso directo para imprimir únicamente los artículos creados por el local (productos pesables, pan, miel o códigos internos de 8 dígitos), con función de pliego mixto de 1 etiqueta por cada interno.',
         'Modo Carta / Catálogo de Mostrador A4: Hoja de consulta rápida para el mesón de la caja organizada por categorías, permitiendo pistolear con el lector productos sin código físico (pesables, pan, etc.).',
         'Opciones de Diseño Flexibles: Configuración en vivo para mostrar/ocultar precio, nombre del local, líneas de corte y selector de 2, 3 o 4 columnas por hoja.',
         'Integración en Catálogo: Acceso directo desde Mantenedores, cabecera de Catálogo de Productos y botón "Pliego A4" dentro de la previsualización de cada etiqueta individual.',

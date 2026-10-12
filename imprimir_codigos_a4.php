@@ -42,10 +42,24 @@ $stmtProd = $pdo->query("
 ");
 $todosProductos = $stmtProd->fetchAll(PDO::FETCH_ASSOC);
 
+// Marcar cuáles productos tienen código interno propio del local
+foreach ($todosProductos as &$p) {
+    $cb = trim($p['CodigoBarras'] ?? '');
+    $plu = trim($p['CodigoPLU'] ?? '');
+    // Se considera código interno si:
+    // 1. Es EAN-8 estándar de tienda (8 dígitos que inician con '2')
+    // 2. O tiene PLU / es pesable de balanza
+    // 3. O no tiene el código de fábrica EAN-13 tradicional (longitud < 13 dígitos)
+    $esInterno = (strlen($cb) === 8 && $cb[0] === '2') || !empty($plu) || ((int)$p['EsPesable'] === 1) || (strlen($cb) > 0 && strlen($cb) < 13);
+    $p['EsCodigoInterno'] = $esInterno ? 1 : 0;
+}
+unset($p);
+
 // Parámetros iniciales desde URL
 $preselectedId = (int)($_GET['producto_id'] ?? 0);
 $preselectedModo = in_array($_GET['modo'] ?? '', ['pliego', 'catalogo'], true) ? $_GET['modo'] : 'pliego';
 $preselectedCat = (int)($_GET['categoria_id'] ?? 0);
+$preselectedSoloInternos = isset($_GET['solo_internos']) ? (int)$_GET['solo_internos'] : 0;
 
 include __DIR__ . '/views/imprimir_codigos_a4.view.php';
 require_once __DIR__ . '/includes/footer.php';

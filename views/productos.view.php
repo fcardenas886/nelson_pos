@@ -4,8 +4,11 @@
     <p style="color: var(--text-muted); font-size: 0.9rem;">Gestión de precios, stock mínimo y códigos de barra</p>
   </div>
   <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
-    <a href="imprimir_codigos_a4.php" class="btn btn-secondary" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); font-weight: 600;">
-      <i class="fa-solid fa-print"></i> Imprimir Códigos A4
+    <a href="imprimir_codigos_a4.php?solo_internos=1" class="btn btn-secondary" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 600;" title="Imprimir hoja A4 con solo los códigos internos del local (EAN-8 / PLU)">
+      <i class="fa-solid fa-star"></i> Códigos Internos A4
+    </a>
+    <a href="imprimir_codigos_a4.php" class="btn btn-secondary" style="color: #94a3b8; border-color: rgba(148, 163, 184, 0.35); font-weight: 600;" title="Imprimir hoja A4 (Pliego de etiquetas o Carta de mostrador)">
+      <i class="fa-solid fa-print"></i> Todos los Códigos A4
     </a>
     <a href="actualizar_precios.php" class="btn btn-secondary" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.35); font-weight: 600;">
       <i class="fa-solid fa-bolt"></i> Actualizador Rápido
