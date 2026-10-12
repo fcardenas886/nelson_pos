@@ -328,7 +328,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
         return "📊 **Ventas del Día de Hoy (" . ($contextoEnVivo['fecha_hoy'] ?? date('d/m/Y')) . "):**\n\n"
             . "Actualmente llevas recaudado **$montoFmt CLP** en **$cantVentas venta(s) completada(s)**."
             . $desglose . "\n\n"
-            . "🔍 **¿Dónde puedes consultarlo en el sistema?**\n\n"
+            . "🔍 **¿Dónde consultarlo en el sistema?**\n\n"
             . "1. 🏠 **Panel de Inicio (Dashboard - `index.php`):**\n"
             . "   * La opción más rápida: al entrar al sistema, la primera tarjeta arriba a la izquierda muestra **'Ventas del Día'** con el monto total y transacciones en tiempo real.\n\n"
             . "2. 🧾 **Caja y Ventas → Ventas y Comprobantes (`ventas.php`):**\n"
@@ -336,8 +336,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "3. 📈 **Reportes → Ventas y Medios de Pago (`reportes.php?tab=ventas`):**\n"
             . "   * Presiona el botón rápido **'Hoy'** para ver gráficos de venta por hora y comparativas.\n\n"
             . "4. 💵 **Caja y Ventas → Turnos y Arqueo (`caja.php`):**\n"
-            . "   * Si solo deseas revisar lo acumulado en tu turno actual abierto en esta caja.\n\n"
-            . "💡 *Nota: No necesitas hacer un arqueo ciego ni Cierre Z para consultar lo que llevas vendido; el Cierre Z es solo para el balance fiscal al finalizar la jornada laboral.*";
+            . "   * Si solo deseas revisar lo acumulado en tu turno actual abierto en esta caja.";
     }
 
     // 2.1 Abrir Caja y Turnos
@@ -735,6 +734,44 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "   * **Cajero:** Operación del POS y ventas diarias.";
     }
 
+    // 2.35 Categorías de Productos
+    if (str_contains($q, 'categoría') || str_contains($q, 'categoria') || str_contains($q, 'familias')) {
+        return "📁 **Gestión de Categorías (`categorias.php`):**\n\n"
+            . "1. Ve a **Mantenedores → Categorías** en el menú superior.\n"
+            . "2. Presiona **'Nueva Categoría'** e ingresa el nombre (ej. *Bebidas*, *Lácteos*, *Panadería*, *Abarrotes*).\n"
+            . "3. Sirve para clasificar los artículos del catálogo, organizar la Carta de Mostrador A4 y filtrar reportes de utilidades.";
+    }
+
+    // 2.36 Notas de Pedido a Distribuidores
+    if (str_contains($q, 'nota de pedido') || str_contains($q, 'notas de pedido') || str_contains($q, 'pedir mercadería') || str_contains($q, 'pedido a distribuidor')) {
+        return "📝 **Notas de Pedido (`notaspedido.php`):**\n\n"
+            . "1. Ve a **Stock y Compras → Notas de Pedido**.\n"
+            . "2. Presiona **'Nueva Nota de Pedido'**, selecciona el proveedor y añade los productos requeridos.\n"
+            . "3. Permite hacer seguimiento a pedidos pendientes antes de recibir la factura física en el local.";
+    }
+
+    // 2.37 Historial de Ventas, Comprobantes y Reimpresión
+    if (str_contains($q, 'reimprimir') || str_contains($q, 'comprobante') || str_contains($q, 'historial de venta') || str_contains($q, 'buscar boleta') || str_contains($q, 'buscar factura')) {
+        return "🧾 **Historial de Ventas y Comprobantes (`ventas.php`):**\n\n"
+            . "1. Ve a **Caja y Ventas → Ventas y Comprobantes**.\n"
+            . "2. Filtra por rango de fechas (por defecto muestra hoy) o busca por folio, RUT o nombre de cliente.\n"
+            . "3. En cada venta puedes presionar el ícono de **Ojo** para ver el detalle de ítems o **Imprimir** para reimprimir el comprobante térmico o ticket.";
+    }
+
+    // 2.38 Centro General de Reportes y Estadísticas
+    if (str_contains($q, 'centro de reportes') || (str_contains($q, 'reporte') && !str_contains($q, 'z') && !str_contains($q, 'utilidad') && !str_contains($q, 'merma') && !str_contains($q, 'inventario'))) {
+        return "📊 **Centro de Reportes (`reportes.php`):**\n\n"
+            . "Accede a estadísticas clave con selector de período (Hoy, Ayer, Esta Semana, Este Mes, Año):\n\n"
+            . "1. 💳 **Ventas y Medios de Pago (`?tab=ventas`):** Totales y gráficos por hora.\n"
+            . "2. 🏆 **Ranking de Productos (`?tab=productos`):** Artículos más vendidos y rotación.\n"
+            . "3. 📦 **Inventario Valorizado (`?tab=inventario`):** Capital a costo y venta.\n"
+            . "4. 🤝 **Cartera y Fiados (`?tab=creditos`):** Saldos pendientes por cobrar.\n"
+            . "5. 🚚 **Compras a Proveedores (`?tab=compras`):** Facturas recibidas.\n"
+            . "6. 👥 **Rendimiento de Cajeros (`?tab=cajeros`):** Productividad de cada usuario.\n"
+            . "7. 💰 **Utilidades y Márgenes (`?tab=utilidades`):** Mark-up sobre costo y ganancia neta.\n"
+            . "8. 🗑️ **Mermas y Pérdidas (`?tab=mermas`):** Auditoría clasificada de bajas.";
+    }
+
     // ----------------------------------------------------------------
     // SECCIÓN 3: FALLBACK HONESTO CUANDO NO SE CONOCE O NO EXISTE LA FUNCIÓN
     // ----------------------------------------------------------------
@@ -789,32 +826,32 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre, $contextoEnVivo = []
         . "Tu ÚNICO propósito es guiar y responder dudas sobre el uso de este sistema POS a cajeros y administradores. "
         . "REGLA CRÍTICA DE HONESTIDAD ABSOLUTA: Si el usuario te pregunta por cualquier función, botón, menú, módulo o integración que NO esté explícitamente detallada en la lista de módulos de Minimarket POS, o si no sabes con certeza cómo se hace algo, TIENES LA OBLIGACIÓN ESTRICTA de declarar con honestidad: 'Esta función no está disponible en Minimarket POS' o 'No dispongo de información sobre esa función en el sistema'. NUNCA inventes funciones, botones, menús ni atajos que no existan. "
         . "ESTRUCTURA DE MÓDULOS DEL SISTEMA (LO QUE SÍ TIENE): "
-        . "- Inicio / Panel Principal (index.php): En la pantalla de bienvenida/dashboard, la primera tarjeta arriba a la izquierda muestra 'Ventas del Día' con el monto total acumulado en CLP y la cantidad de transacciones completadas hoy en tiempo real. Es la forma más rápida y directa de consultar cuánto se ha vendido en el día sin entrar a submenús. "
+        . "- Inicio / Panel Principal (index.php): En la pantalla de bienvenida/dashboard, la primera tarjeta arriba a la izquierda muestra 'Ventas del Día' con el monto total acumulado en CLP y la cantidad de transacciones completadas hoy en tiempo real. Es la forma más rápida y directa de consultar cuánto se ha vendido en el día sin entrar a submenús. También muestra el estado del turno y las alertas de stock. "
         . "- Caja POS (pos.php): Venta rápida con lector o búsqueda, atajos (F12 cobrar, Ctrl+F10 gaveta, F2 buscador, +/- cantidad, Supr eliminar). Cobro en Efectivo, Tarjeta Transbank/POS, Transferencia, Fiado/Crédito interno con cupo, Puntos (1 pt = $1 CLP) y Pago Mixto. Pausar y recuperar ventas en botón 'Pendientes'. Descuentos en caja (porcentaje o monto). Modos de pantalla: Supermercado (rápido escáner), Táctil (touchscreen con tarjetas grandes) y Clásico (dividido catálogo y carrito). Modo Offline en IndexedDB con sincronización automática. "
         . "- Pesables y Balanza (productos.php, pos.php, configuracion.php): Casilla 'Es Pesable', botón '⚡ Generar PLU' (4 dígitos). Balanza con etiqueta EAN-13 o sin etiqueta con ventana interactiva para ingresar kilos (calcula $) o monto $ (calcula kilos). "
         . "- Caja y Ventas -> Ventas y Comprobantes (ventas.php): Muestra el historial completo de todas las boletas, facturas y tickets emitidos en el día por defecto, con buscador por folio o cliente, cajero, estado (Completada/Anulada), detalle de productos, método de pago y botón para reimprimir el comprobante. "
+        . "- Caja y Ventas -> Devoluciones y Vales (devoluciones.php): Registro de devoluciones de clientes, emisión de Vales de Devolución con código de barras y saldo a favor, canje o reembolso. "
+        . "- Caja y Ventas -> Cotizaciones (cotizaciones.php): Crear presupuestos/notas de pedido con cliente y productos, ver detalle en pantalla (icono de ojo), anular, y botón 'A la caja' para transferir los productos directo al carrito del POS para cobrar con F12. ATENCIÓN: El sistema NO tiene botón para enviar por WhatsApp, ni enviar por email, ni generar PDF; no inventes esas funciones. "
         . "- Caja y Ventas -> Turnos y Arqueo (caja.php): Apertura de turno con monto de fondo y selección de caja física; botón 'Retiro / Ingreso' para justificar salidas de efectivo (pagos a proveedores, adelantos); consulta de lo recaudado únicamente en el turno en curso de la caja física actual; cierre de turno mediante Arqueo Ciego honesto (conteo físico de efectivo en billetes/monedas, vouchers y transferencias), clave de supervisor (si es cajero) y casilla marcada por defecto 'Generar Cierre Z de esta caja también' para emitir el Z al finalizar la jornada. "
-        . "- Reportes -> Ventas y Medios de Pago (reportes.php?tab=ventas): Centro de reportes con selector rápido 'Hoy', gráficos de ventas por hora, comparativas y desglose por métodos de pago (Efectivo, Tarjeta Transbank, Transferencia, Fiado). "
-        . "- Reportes -> Cierre Z Fiscal (reportes_z.php): Módulo exclusivo para consultar el historial de todos los Cierres Z correlativos (#Z) emitidos, con fecha, supervisor, boletas/facturas, monto neto, IVA (19%) y total recaudado. También incluye botón para 'Generar Cierre Z Diario' de forma manual si no se emitió desde la caja. "
-        . "- Multi-Caja (cajas.php): Habilitación de cajas registradoras físicas (Caja 01, Caja 02). "
+        . "- Mantenedores -> Productos y Precios (productos.php): Catálogo, generar código EAN-8 automático (prefijo 2), múltiples códigos por producto, stock mínimo, e imprimir etiquetas individuales (1 por 1 para rollo de stickers térmicos 50x30mm) o enlace a Imprimir Códigos A4. "
+        . "- Mantenedores -> Actualizador Rápido Precios (actualizar_precios.php): Modificación masiva y veloz de precios de venta en cuadrícula con recálculo de margen en vivo. "
         . "- Mantenedores -> Imprimir Códigos A4 (imprimir_codigos_a4.php): Módulo especializado para imprimir en hoja estándar A4. Modo Pliego de Etiquetas (stickers recortables de 1 producto o pliego mixto con 1 de cada código interno), Modo Carta de Mostrador (catálogo escaneable organizado por categorías para mesón de caja), selector de 2/3/4 columnas, filtro ⭐ 'Solo Internos', selector de zoom y líneas de corte punteadas. "
-        . "- Inventario -> Productos (productos.php): Catálogo, generar código EAN-8 automático (prefijo 2), múltiples códigos por producto, stock mínimo, e imprimir etiquetas individuales (1 por 1 para rollo de stickers térmicos 50x30mm) o enlace a Imprimir Códigos A4. "
-        . "- Inventario -> Toma de Inventario Físico (inventario.php): Conteo ciego y ajuste masivo por diferencia. "
-        . "- Inventario -> Alertas de Stock (alertas_stock.php): Lista de productos bajo stock mínimo o agotados. "
-        . "- Inventario -> Actualizar Precios (actualizar_precios.php): Modificación masiva y recálculo de margen en vivo. "
-        . "- Inventario -> Kardex (kardex.php): Trazabilidad de movimientos con movimiento INICIAL de apertura de catálogo, ventas, compras, ajustes y devoluciones, buscador predictivo, tarjeta resumen con KPIs (Stock Inicial, Entradas +, Salidas -, Saldo Actual =), filtros y Excel. "
-        . "- Inventario -> Ajustes de Stock (ajustes_stock.php) y Mermas (reportes.php?tab=mermas): Registro clasificado de bajas (Vencimiento, Daño/Rotura, Pérdida, Consumo Interno) congelando costo unitario. "
-        . "- Operaciones -> Cotizaciones y Notas de Pedido (cotizaciones.php): Crear presupuestos/notas de pedido con cliente y productos, ver detalle en pantalla (icono de ojo), anular, y botón 'A la caja' para transferir los productos directo al carrito del POS para cobrar con F12. ATENCIÓN: El sistema NO tiene botón para enviar por WhatsApp, ni enviar por email, ni generar PDF; no inventes esas funciones. "
-        . "- Operaciones -> Recepción de Compras (recepcion_compras.php): En 2 fases: Fase 1 ingresa stock y costo de factura del proveedor; Fase 2 actualiza precios con recálculo de margen sobre costo. "
-        . "- Operaciones -> Devoluciones y Anulaciones (ventas.php, devoluciones.php): Anulación total reponiendo stock (incluso packs) o vales de devolución parcial. "
-        . "- Operaciones -> Consulta de Precios (consulta_precio.php): Verificador de precios para escáner. "
-        . "- Maestros -> Clientes y Créditos (clientes.php): Cupo de fiado, pagos/abonos con algoritmo FIFO, y acumulación/canje de puntos (1 punto = $1). "
-        . "- Maestros -> Proveedores (proveedores.php): Registro y contacto de distribuidores. "
-        . "- Maestros -> Ofertas (promociones.php): Descuentos por unidad y packs por volumen (ej. 3 por $2.000). "
-        . "- Reportes -> Utilidades y Márgenes (reportes.php?tab=utilidades): Margen comercial sobre costo ((Venta - Costo)/Costo * 100), categorías desplegables en acordeón y Utilidad Real Neta descontando mermas. "
-        . "- Reportes -> Inventario Valorizado (reportes.php?tab=inventario): Detalle a costo y venta, identificación de artículos sin costo (S/C) y Excel. "
-        . "- Configuración (configuracion.php): Logo, datos del local, tema oscuro/claro, boleta SII/DTE (OpenFactura, Haulmer, Mock, Comprobante Local), políticas de supervisión de caja (clave supervisor al cancelar o descontar), impresora térmica directa (POSBANK A11 Prime 80mm) y Asistente de IA. "
+        . "- Mantenedores -> Categorías (categorias.php): Creación y administración de familias y categorías de mercadería. "
+        . "- Mantenedores -> Clientes y Créditos (clientes.php): Cupo de fiado, pagos/abonos con algoritmo FIFO, y acumulación/canje de puntos (1 punto = $1). "
+        . "- Mantenedores -> Ofertas (promociones.php): Descuentos por unidad y packs por volumen (ej. 3 por $2.000). "
+        . "- Stock y Compras -> Kardex (kardex.php): Trazabilidad de movimientos con movimiento INICIAL de apertura de catálogo, ventas, compras, ajustes y devoluciones, buscador predictivo, tarjeta resumen con KPIs (Stock Inicial, Entradas +, Salidas -, Saldo Actual =), filtros y Excel. "
+        . "- Stock y Compras -> Ajustes de Stock (ajustes.php): Registro clasificado de bajas/mermas (Vencimiento, Daño/Rotura, Pérdida, Consumo Interno) congelando costo unitario. "
+        . "- Stock y Compras -> Toma de Inventario Físico (inventario.php): Conteo ciego o teórico y ajuste masivo por diferencia. "
+        . "- Stock y Compras -> Alertas de Stock (alertas_stock.php): Lista de productos bajo stock mínimo o agotados con sugerencias de compra. "
+        . "- Stock y Compras -> Notas de Pedido (notaspedido.php): Requerimientos de compras a distribuidores antes de recibir factura. "
+        . "- Stock y Compras -> Recepción de Compras (compras.php): En 2 fases: Fase 1 ingresa stock y costo de factura del proveedor; Fase 2 actualiza precios con recálculo de margen sobre costo. "
+        . "- Stock y Compras -> Proveedores (proveedores.php): Registro y contacto de distribuidores. "
+        . "- Reportes -> Centro de Reportes (reportes.php): Filtros rápidos (Hoy, Ayer, Semana, Mes, Año). Pestañas: 'ventas' (totales, gráficos por hora, medios de pago), 'productos' (ranking más vendidos y rotación), 'inventario' (inventario valorizado a costo y venta, artículos sin costo S/C), 'creditos' (cartera de fiados), 'compras' (volumen de compras), 'cajeros' (rendimiento por cajero), 'utilidades' (margen sobre costo mark-up ((Venta-Costo)/Costo*100), acordeón y Utilidad Real Neta descontando mermas), 'mermas' (auditoría de pérdidas por rotura o vencimiento). "
+        . "- Reportes -> Cierre Z Fiscal (reportes_z.php): Módulo exclusivo para consultar el historial de todos los Cierres Z correlativos (#Z) emitidos, con fecha, supervisor, boletas/facturas, monto neto, IVA (19%) y total recaudado. Botón 'Generar Cierre Z Diario'. "
+        . "- Operaciones -> Consulta de Precios (consulta_precio.php): Verificador de precios para escáner en pantalla limpia. "
+        . "- Administración -> Cajas Registradoras (cajas.php): Habilitación de cajas registradoras físicas (Caja 01, Caja 02). "
         . "- Administración -> Usuarios y Permisos (usuarios.php): Roles Administrador, Supervisor y Cajero, con clave de supervisor para autorizaciones especiales en caja y cierres de turno. "
+        . "- Configuración (configuracion.php): Logo, datos del local, tema oscuro/claro, boleta SII/DTE (OpenFactura, Haulmer, Mock, Comprobante Local), políticas de supervisión de caja (clave supervisor al cancelar o descontar), impresora térmica directa (POSBANK A11 Prime 80mm) y Asistente de IA. "
         . "REGLA OBLIGATORIA PARA CONSULTAS SOBRE 'CUÁNTO VENDÍ', 'VENTAS DE HOY' O 'CÓMO SÉ CUÁNTO VENDÍ': "
         . "1. RESPONDE DE INMEDIATO con la cifra real acumulada del día usando los DATOS EN TIEMPO REAL DEL SISTEMA HOY inyectados arriba (ejemplo: 'Hoy llevas vendido \$X CLP en N ventas completadas'). Si lleva \$0, acláralo amablemente. "
         . "2. Explica de forma concisa y directa los accesos principales del sistema para consultarlo: "
@@ -822,7 +859,7 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre, $contextoEnVivo = []
         . "   * Para revisar cada boleta o comprobante: En Caja y Ventas -> Ventas y Comprobantes (ventas.php). "
         . "   * Para gráficos por hora y medios de pago: En Reportes -> Ventas y Medios de Pago (reportes.php?tab=ventas) seleccionando 'Hoy'. "
         . "   * Si solo quiere su turno en caja: En Caja y Ventas -> Turnos y Arqueo (caja.php). "
-        . "PROHIBICIÓN ESTRICTA: NUNCA le digas al usuario que debe hacer un arqueo ciego o generar un Cierre Z solo para saber cuánto vendió; el arqueo ciego y el Cierre Z son exclusivamente para cerrar turno o auditoría fiscal final. "
+        . "PROHIBICIÓN ESTRICTA: NO MENCIONES las palabras 'Cierre Z', 'fiscal' ni 'arqueo ciego' en respuestas sobre ventas del día. La Z no viene al caso para consultar ventas diarias. No agregues notas ni advertencias sobre la Z. Limítate a responder lo pedido con la cifra y los accesos del sistema de forma limpia y directa. "
         . "FUNCIONES QUE EL SISTEMA NO POSEE (DEBES DECLARAR CON HONESTIDAD QUE NO EXISTEN): "
         . "1. WhatsApp en cotizaciones o ventas: NO existe botón de envío por WhatsApp ni PDF. Aclara que se consulta en pantalla o se pasa 'A la caja'. "
         . "2. Pago de sueldos o nóminas: NO existe módulo de nóminas ni recursos humanos. Sugiere registrar 'Retiro de Caja' con motivo. "
