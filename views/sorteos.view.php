@@ -530,4 +530,4 @@ $sorteoActivoId = $sorteoActivoDefault['SorteoID'] ?? 0;
   </div>
 </div>
 
-<script src="assets/js/sorteos.js?v=<?= APP_VERSION ?>"></script>
+<script src="assets/js/sorteos.js?v=<?= APP_VERSION ?>_cupon_v2"></script>

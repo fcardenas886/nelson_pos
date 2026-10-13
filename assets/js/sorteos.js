@@ -3,6 +3,12 @@
  * Minimarket POS Web
  */
 
+function formatNumber(num) {
+  if (num === null || num === undefined || num === '') return '0';
+  const n = Math.round(Number(num) || 0);
+  return new Intl.NumberFormat('es-CL').format(n);
+}
+
 let sorteoActualId = null;
 let listaParticipantes = [];
 let ganadorTentativo = null;
