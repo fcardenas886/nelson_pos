@@ -360,15 +360,12 @@
           </select>
           <div id="pmClienteCard" class="pm-cliente-card" style="display: none;">
             <div class="pm-badges">
-              <?php if ($loyaltyActivo): ?>
-                <span id="pmBadgePuntos" class="pm-badge pts"><i class="fa-solid fa-star"></i> 0 pts</span>
-              <?php endif; ?>
+              <span id="pmBadgePuntos" class="pm-badge pts" style="<?= $loyaltyActivo ? '' : 'display: none !important;' ?>"><i class="fa-solid fa-star"></i> 0 pts</span>
               <?php if ($creditoActivo): ?>
                 <span id="pmBadgeCupo" class="pm-badge cupo"><i class="fa-solid fa-handshake"></i> Cupo $0</span>
               <?php endif; ?>
             </div>
-            <?php if ($loyaltyActivo): ?>
-            <div id="pmCanjeBox">
+            <div id="pmCanjeBox" style="<?= $loyaltyActivo ? '' : 'display: none !important;' ?>">
               <div id="pmCanjeForm" class="pm-canje">
                 <input type="number" id="puntosCanjeInput" class="form-control" min="1" step="1" placeholder="Puntos a usar" style="flex: 1; min-width: 0;" onkeydown="if(event.key==='Enter'){event.preventDefault();aplicarCanjePuntos();}">
                 <button type="button" onclick="aplicarCanjePuntos()" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-weight: 700; color: #facc15; border-color: rgba(234,179,8,0.4); white-space: nowrap;">
@@ -381,7 +378,6 @@
               </div>
               <small style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-top: 0.3rem;">1 punto = $1 de descuento sobre el total.</small>
             </div>
-            <?php endif; ?>
           </div>
         </div>
 

@@ -1319,16 +1319,22 @@ function abrirModalPago() {
   }
 
   puntosCanje = 0;
-  document.getElementById('puntosCanjeInput').value = '';
-  ['mixtoEfectivo', 'mixtoTarjeta', 'mixtoTransf', 'mixtoFiado'].forEach(id => { document.getElementById(id).value = ''; });
-  document.getElementById('montoRecibidoModal').value = getTotalPorPagar();
+  const inpPts = document.getElementById('puntosCanjeInput');
+  if (inpPts) inpPts.value = '';
+  ['mixtoEfectivo', 'mixtoTarjeta', 'mixtoTransf', 'mixtoFiado'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const mRec = document.getElementById('montoRecibidoModal');
+  if (mRec) mRec.value = getTotalPorPagar();
   onClientePagoChange();
 
   // Cada venta parte en Efectivo
-  setFormaPago('Efectivo', document.querySelector('.btn-metodo[data-metodo="Efectivo"]'));
+  const btnEfec = document.querySelector('.btn-metodo[data-metodo="Efectivo"]');
+  setFormaPago('Efectivo', btnEfec);
 
   const modal = document.getElementById('pagoModal');
-  modal.style.display = 'flex';
+  if (modal) modal.style.display = 'flex';
 }
 
 // Lo que queda por pagar con la forma de pago elegida, descontados los puntos canjeados
@@ -1450,9 +1456,12 @@ function refrescarResumenPago() {
   desg.style.display = filas.length ? 'flex' : 'none';
 
   const canjeOk = puntosCanje > 0;
-  document.getElementById('pmCanjeForm').style.display = canjeOk ? 'none' : 'flex';
-  document.getElementById('pmCanjeOk').style.display = canjeOk ? 'flex' : 'none';
-  document.getElementById('pmCanjeTexto').textContent = `Usando ${formatNumber(puntosCanje)} pts (-$${formatNumber(puntosCanje)})`;
+  const fCanje = document.getElementById('pmCanjeForm');
+  if (fCanje) fCanje.style.display = canjeOk ? 'none' : 'flex';
+  const oCanje = document.getElementById('pmCanjeOk');
+  if (oCanje) oCanje.style.display = canjeOk ? 'flex' : 'none';
+  const tCanje = document.getElementById('pmCanjeTexto');
+  if (tCanje) tCanje.textContent = `Usando ${formatNumber(puntosCanje)} pts (-$${formatNumber(puntosCanje)})`;
 
   calcularVueltoModal();
 }
