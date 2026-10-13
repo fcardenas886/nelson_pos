@@ -159,7 +159,7 @@ $changelogActual = APP_CHANGELOG[APP_VERSION] ?? [];
 
     <!-- Grupo: Caja y Ventas -->
     <li class="nav-item has-dropdown">
-      <div class="nav-link <?= in_array($currentPage, ['caja.php', 'ventas.php', 'devoluciones.php', 'cotizaciones.php']) ? 'active' : '' ?>" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
+      <div class="nav-link <?= in_array($currentPage, ['caja.php', 'ventas.php', 'devoluciones.php', 'cotizaciones.php', 'sorteos.php']) ? 'active' : '' ?>" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
         <i class="fa-solid fa-cash-register"></i> Caja y Ventas <i class="fa-solid fa-chevron-down nav-caret"></i>
       </div>
       <ul class="dropdown-menu" style="min-width: 230px;">
@@ -178,6 +178,7 @@ $changelogActual = APP_CHANGELOG[APP_VERSION] ?? [];
         <li><a href="ventas.php" class="dropdown-item"><i class="fa-solid fa-receipt"></i> Ventas y Comprobantes</a></li>
         <li><a href="devoluciones.php" class="dropdown-item"><i class="fa-solid fa-rotate-left"></i> Devoluciones y Vales</a></li>
         <li><a href="cotizaciones.php" class="dropdown-item"><i class="fa-solid fa-file-lines"></i> Cotizaciones</a></li>
+        <li><a href="sorteos.php" class="dropdown-item"><i class="fa-solid fa-gift" style="color: #f59e0b;"></i> Sorteos y Cupones</a></li>
       </ul>
     </li>
 

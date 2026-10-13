@@ -429,6 +429,25 @@
           </div>
           <div id="valeAplicadoInfo" style="font-size: 0.78rem; margin-top: 0.3rem; display: none;"></div>
         </div>
+
+        <!-- Banner de Sorteo Activo en POS -->
+        <div id="pmSorteoBox" style="display: none; border-radius: 12px; border: 1px dashed rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.08); padding: 0.7rem 0.8rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.82rem; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 0.4rem;">
+              <i class="fa-solid fa-gift"></i> <span id="pmSorteoTitulo">Sorteo Activo</span>
+            </span>
+            <span id="pmSorteoCuponesEst" class="pm-badge" style="background: rgba(245, 158, 11, 0.2); color: #facc15; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 0.75rem;">
+              0 cupones
+            </span>
+          </div>
+          <div id="pmSorteoDatosParticipante" style="display: none; flex-direction: column; gap: 0.4rem;">
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Anota datos del participante para el sorteo (opcional):</div>
+            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 0.4rem;">
+              <input type="text" id="pmSorteoNombre" class="form-control" placeholder="Nombre participante" style="font-size: 0.8rem; padding: 0.35rem 0.55rem;">
+              <input type="tel" id="pmSorteoTelefono" class="form-control" placeholder="Teléfono" style="font-size: 0.8rem; padding: 0.35rem 0.55rem;">
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Columna Derecha: Forma de Pago -->
@@ -642,6 +661,21 @@
 
       <div class="tk-sep"></div>
       <div class="tk-center tk-pie"><?= htmlspecialchars($cfgLocal['TICKET_PIE_PAGINA'] ?? '¡Gracias por su preferencia!') ?></div>
+
+      <!-- Talón de Sorteo / Cupones Ganados -->
+      <div id="ticketSorteoBox" style="display: none; border-top: 2px dashed #000; margin-top: 10px; padding-top: 8px;">
+        <div class="tk-center tk-strong" style="font-size: 1.15em; letter-spacing: 1px;">🎟️ TALÓN DE SORTEO</div>
+        <div class="tk-center tk-strong" id="tkSorteoTitulo">Campaña de Sorteo</div>
+        <div class="tk-center" style="font-size: 0.85em; margin: 3px 0;">¡Conserva este talón para reclamar tu premio!</div>
+        <div id="tkSorteoCuponesLista" style="text-align: center; margin: 8px 0; font-family: monospace; font-size: 1.2em; font-weight: bold;"></div>
+        <div class="tk-row" id="tkSorteoParticipanteRow" style="display: none;">
+          <span>Participante:</span><span class="tk-strong" id="tkSorteoParticipante"></span>
+        </div>
+        <div class="tk-row" id="tkSorteoTelefonoRow" style="display: none;">
+          <span>Teléfono:</span><span id="tkSorteoTelefono"></span>
+        </div>
+        <div class="tk-center" style="font-size: 0.85em; margin-top: 4px;">🍀 ¡Mucha Suerte! 🍀</div>
+      </div>
 
       <!-- DTE (boleta electrónica) -->
       <div id="ticketDteInfo" class="tk-dte tk-center" style="display: none;">

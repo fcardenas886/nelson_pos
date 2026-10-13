@@ -6,3 +6,4 @@ Thumbs.db
 .idea/
 db/dump_*.sql
 *.sql
+!db/migrations/*.sql

@@ -404,6 +404,96 @@ try {
         ")->execute([':id' => $cotizacionID]);
     }
 
+    // 5. Emisión automática de cupones para Sorteo Activo (si aplica)
+    $cuponesSorteo = [];
+    $nombreParticipante = trim($input['sorteo_nombre_participante'] ?? '');
+    $telefonoParticipante = trim($input['sorteo_telefono_participante'] ?? '');
+    $sorteoActivoInfo = null;
+
+    try {
+        $stmtSorteo = $pdo->query("
+            SELECT SorteoID, Titulo, Descripcion, TipoRegla, MontoMinimoCupon, RequiereCliente, ImprimirCuponEnTicket
+            FROM sorteos
+            WHERE Estado = 'Activo' 
+              AND FechaInicio <= CURDATE() 
+              AND FechaFin >= CURDATE()
+            ORDER BY SorteoID DESC
+            LIMIT 1
+        ");
+        $sorteoActivo = $stmtSorteo ? $stmtSorteo->fetch(PDO::FETCH_ASSOC) : null;
+
+        if ($sorteoActivo) {
+            $sorteoActivoInfo = $sorteoActivo;
+            $puedeParticipar = true;
+            if ($sorteoActivo['RequiereCliente'] && empty($clienteID)) {
+                $puedeParticipar = false;
+            }
+
+            if ($puedeParticipar) {
+                $montoBase = (float)($sorteoActivo['MontoMinimoCupon'] ?? 5000);
+                $cantCupones = 0;
+
+                if ($sorteoActivo['TipoRegla'] === 'por_venta') {
+                    $cantCupones = ($montoTotal >= $montoBase || $montoBase <= 0) ? 1 : 0;
+                } else {
+                    if ($montoBase > 0) {
+                        $cantCupones = (int)floor($montoTotal / $montoBase);
+                    }
+                }
+
+                if ($cantCupones > 0) {
+                    $stmtMaxNum = $pdo->prepare("SELECT COALESCE(MAX(NumeroCupon), 0) FROM sorteos_cupones WHERE SorteoID = :sid FOR UPDATE");
+                    $stmtMaxNum->execute([':sid' => $sorteoActivo['SorteoID']]);
+                    $ultimoNum = (int)$stmtMaxNum->fetchColumn();
+
+                    // Si no se indicaron datos y hay cliente registrado, usar los del cliente
+                    if (empty($nombreParticipante) && $clienteID) {
+                        $stCliInfo = $pdo->prepare("SELECT Nombre, Telefono FROM clientes WHERE ClienteID = :cid");
+                        $stCliInfo->execute([':cid' => $clienteID]);
+                        $cliInfo = $stCliInfo->fetch(PDO::FETCH_ASSOC);
+                        if ($cliInfo) {
+                            $nombreParticipante = $cliInfo['Nombre'] ?? '';
+                            $telefonoParticipante = $cliInfo['Telefono'] ?? '';
+                        }
+                    }
+
+                    $stmtInsCupon = $pdo->prepare("
+                        INSERT INTO sorteos_cupones (
+                            SorteoID, VentaID, NumeroCupon, CodigoCupon, ClienteID,
+                            NombreParticipante, TelefonoParticipante, MontoVenta
+                        ) VALUES (
+                            :sid, :vid, :num, :cod, :cid, :nom, :tel, :monto
+                        )
+                    ");
+
+                    for ($i = 1; $i <= $cantCupones; $i++) {
+                        $numCupon = $ultimoNum + $i;
+                        $codCupon = sprintf("SOR-%05d", $numCupon);
+                        $stmtInsCupon->execute([
+                            ':sid' => $sorteoActivo['SorteoID'],
+                            ':vid' => $ventaID,
+                            ':num' => $numCupon,
+                            ':cod' => $codCupon,
+                            ':cid' => $clienteID ?: null,
+                            ':nom' => $nombreParticipante ?: null,
+                            ':tel' => $telefonoParticipante ?: null,
+                            ':monto' => $montoTotal,
+                        ]);
+                        $cuponesSorteo[] = [
+                            'cupon_id' => (int)$pdo->lastInsertId(),
+                            'numero' => $numCupon,
+                            'codigo' => $codCupon,
+                            'titulo_sorteo' => $sorteoActivo['Titulo'],
+                            'imprimir' => (bool)$sorteoActivo['ImprimirCuponEnTicket']
+                        ];
+                    }
+                }
+            }
+        }
+    } catch (Exception $eSorteo) {
+        error_log("[Sorteos] Error al emitir cupones en venta $ventaID: " . $eSorteo->getMessage());
+    }
+
     $pdo->commit();
 
     // Emisión de DTE (Boleta o Factura electrónica) si está configurado un proveedor
@@ -447,6 +537,14 @@ try {
         'puntos_ganados' => $puntosGanados,
         'fecha' => date('d/m/Y H:i:s')
     ];
+
+    if (!empty($cuponesSorteo)) {
+        $resPayload['sorteo'] = [
+            'titulo' => $sorteoActivoInfo['Titulo'] ?? 'Sorteo',
+            'cupones' => $cuponesSorteo,
+            'imprimir' => !empty($sorteoActivoInfo['ImprimirCuponEnTicket'])
+        ];
+    }
 
     if ($dteResponse) {
         $resPayload['dte'] = $dteResponse;

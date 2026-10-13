@@ -1333,6 +1333,11 @@ function abrirModalPago() {
   const btnEfec = document.querySelector('.btn-metodo[data-metodo="Efectivo"]');
   setFormaPago('Efectivo', btnEfec);
 
+  const inpNom = document.getElementById('pmSorteoNombre');
+  if (inpNom) inpNom.value = '';
+  const inpTel = document.getElementById('pmSorteoTelefono');
+  if (inpTel) inpTel.value = '';
+
   const modal = document.getElementById('pagoModal');
   if (modal) modal.style.display = 'flex';
 }
@@ -1464,6 +1469,61 @@ function refrescarResumenPago() {
   if (tCanje) tCanje.textContent = `Usando ${formatNumber(puntosCanje)} pts (-$${formatNumber(puntosCanje)})`;
 
   calcularVueltoModal();
+  actualizarBannerSorteoModal(totalVenta);
+}
+
+let cacheSorteoActivoPos = undefined;
+
+async function obtenerSorteoActivoPos() {
+  if (cacheSorteoActivoPos !== undefined) return cacheSorteoActivoPos;
+  try {
+    const res = await fetch('api/sorteos.php?accion=sorteo_activo');
+    const data = await res.json();
+    cacheSorteoActivoPos = (data.success && data.sorteo) ? data.sorteo : null;
+  } catch (e) {
+    cacheSorteoActivoPos = null;
+  }
+  return cacheSorteoActivoPos;
+}
+
+async function actualizarBannerSorteoModal(totalVenta) {
+  const box = document.getElementById('pmSorteoBox');
+  if (!box) return;
+
+  const sorteo = await obtenerSorteoActivoPos();
+  if (!sorteo) {
+    box.style.display = 'none';
+    return;
+  }
+
+  const cli = getClientePago();
+  if (sorteo.RequiereCliente == 1 && !cli) {
+    box.style.display = 'none';
+    return;
+  }
+
+  const base = parseFloat(sorteo.MontoMinimoCupon) || 5000;
+  let cant = 0;
+  if (sorteo.TipoRegla === 'por_venta') {
+    cant = (totalVenta >= base || base <= 0) ? 1 : 0;
+  } else {
+    cant = base > 0 ? Math.floor(totalVenta / base) : 0;
+  }
+
+  if (cant > 0) {
+    box.style.display = 'block';
+    const titEl = document.getElementById('pmSorteoTitulo');
+    if (titEl) titEl.textContent = sorteo.Titulo;
+    const estEl = document.getElementById('pmSorteoCuponesEst');
+    if (estEl) estEl.textContent = `${cant} ${cant === 1 ? 'cupón' : 'cupones'}`;
+
+    const partBox = document.getElementById('pmSorteoDatosParticipante');
+    if (partBox) {
+      partBox.style.display = (!cli) ? 'flex' : 'none';
+    }
+  } else {
+    box.style.display = 'none';
+  }
 }
 
 function cerrarModalPago() {
@@ -1740,7 +1800,9 @@ async function confirmarPagoModal() {
     pagos: pagos,
     monto_pagado: recibido,
     vuelto: vuelto,
-    monto_total: total
+    monto_total: total,
+    sorteo_nombre_participante: document.getElementById('pmSorteoNombre')?.value.trim() || '',
+    sorteo_telefono_participante: document.getElementById('pmSorteoTelefono')?.value.trim() || ''
   };
 
   let dataVenta = null;
@@ -2069,6 +2131,48 @@ function mostrarTicket(data, items, total, pagado, vuelto, pagos, meta) {
     credBox.style.display = 'block';
   } else {
     credBox.style.display = 'none';
+  }
+
+  // Talón de sorteo en el comprobante si se emitieron cupones
+  const tkSorteoBox = document.getElementById('ticketSorteoBox');
+  if (tkSorteoBox) {
+    if (data.sorteo && data.sorteo.cupones && data.sorteo.cupones.length > 0) {
+      const titEl = document.getElementById('tkSorteoTitulo');
+      if (titEl) titEl.textContent = data.sorteo.titulo || 'Campaña de Sorteo';
+
+      const listaEl = document.getElementById('tkSorteoCuponesLista');
+      if (listaEl) {
+        listaEl.innerHTML = data.sorteo.cupones.map(cp => `
+          <div style="border: 2px dashed #000; padding: 4px; margin: 4px 0; font-size: 1.15em; font-family: monospace;">
+            ${cp.codigo}
+          </div>
+        `).join('');
+      }
+
+      const cliNombre = document.getElementById('pmSorteoNombre')?.value.trim() || '';
+      const cliTel = document.getElementById('pmSorteoTelefono')?.value.trim() || '';
+      const rowNom = document.getElementById('tkSorteoParticipanteRow');
+      const rowTel = document.getElementById('tkSorteoTelefonoRow');
+
+      if (cliNombre) {
+        if (rowNom) rowNom.style.display = 'flex';
+        document.getElementById('tkSorteoParticipante').textContent = cliNombre;
+      } else {
+        if (rowNom) rowNom.style.display = 'none';
+      }
+
+      if (cliTel) {
+        if (rowTel) rowTel.style.display = 'flex';
+        document.getElementById('tkSorteoTelefono').textContent = cliTel;
+      } else {
+        if (rowTel) rowTel.style.display = 'none';
+      }
+
+      tkSorteoBox.style.display = 'block';
+      toast(`🎟️ ¡Esta venta generó ${data.sorteo.cupones.length} cupón(es) para el sorteo!`, 'success');
+    } else {
+      tkSorteoBox.style.display = 'none';
+    }
   }
 
   // Mostrar u ocultar sección DTE según la respuesta

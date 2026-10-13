@@ -452,6 +452,28 @@
           b.textLine(`Acepto adeudar el monto de $${formatNum(total)}`);
         }
 
+        // Talón de sorteo si se emitieron cupones
+        if (data.sorteo && data.sorteo.cupones && data.sorteo.cupones.length > 0 && data.sorteo.imprimir) {
+          b.feed(1);
+          b.textLine('------------------------------------------------');
+          b.alignCenter();
+          b.bold(true);
+          b.textLine('*** TALON PARA SORTEO ***');
+          b.textLine(data.sorteo.titulo || 'Gran Sorteo');
+          b.bold(false);
+          b.textLine('Conserva este talon para reclamar tu premio');
+          b.feed(1);
+          data.sorteo.cupones.forEach(cp => {
+            b.bold(true);
+            b.textLine(`CUPON N: ${cp.codigo}`);
+            b.bold(false);
+          });
+          b.feed(1);
+          b.textLine('🍀 Mucha Suerte! 🍀');
+          b.alignLeft();
+          b.textLine('------------------------------------------------');
+        }
+
         // Pie de ticket
         b.textLine('================================================');
         b.alignCenter();
