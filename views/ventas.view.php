@@ -1,3 +1,11 @@
+<style>
+.cuadratura-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border-color: rgba(99, 102, 241, 0.6) !important;
+}
+</style>
+
 <!-- Encabezado y Filtros Rápidos -->
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem;">
   <div>
@@ -73,20 +81,223 @@
   </div>
 </div>
 
+<!-- Barra de Resumen de Cuadratura por Medio de Pago -->
+<div class="table-card" style="margin-bottom: 1.5rem; padding: 1.15rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+    <div style="display: flex; align-items: center; gap: 0.6rem;">
+      <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; color: #818cf8; font-size: 0.95rem;">
+        <i class="fa-solid fa-scale-balanced"></i>
+      </div>
+      <div>
+        <h3 style="font-size: 0.95rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.4rem;">
+          Cuadratura de Medios de Pago
+        </h3>
+        <span style="font-size: 0.75rem; color: var(--text-muted);">
+          Total recaudado en ventas completadas del período (haz clic en cualquier tarjeta para filtrar)
+        </span>
+      </div>
+    </div>
+    
+    <div style="font-size: 0.8rem; color: var(--text-muted); background: rgba(255,255,255,0.03); padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid var(--border-dark);">
+      <i class="fa-regular fa-calendar"></i> <?= date('d/m/Y', strtotime($desde)) ?> &rarr; <?= date('d/m/Y', strtotime($hasta)) ?>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem;">
+    <!-- Tarjeta Todos -->
+    <div onclick="filtrarPorMedio('Todos')" 
+         style="cursor: pointer; padding: 0.75rem; border-radius: 10px; background: <?= $metodoPago === 'Todos' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255, 255, 255, 0.02)' ?>; border: 1px solid <?= $metodoPago === 'Todos' ? '#6366f1' : 'var(--border-dark)' ?>; transition: all 0.2s;"
+         class="cuadratura-chip">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+        <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: <?= $metodoPago === 'Todos' ? '#818cf8' : 'var(--text-muted)' ?>;">
+          <i class="fa-solid fa-list-check"></i> Todos
+        </span>
+        <?php if ($metodoPago === 'Todos'): ?>
+          <i class="fa-solid fa-circle-check" style="color: #818cf8; font-size: 0.75rem;"></i>
+        <?php endif; ?>
+      </div>
+      <div style="font-size: 1.15rem; font-weight: 700; color: var(--text);">
+        <?= formatCLP($totalRecaudado) ?>
+      </div>
+      <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">
+        <?= $totalVentasCount ?> venta(s)
+      </div>
+    </div>
+
+    <!-- Efectivo -->
+    <div onclick="filtrarPorMedio('Efectivo')" 
+         style="cursor: pointer; padding: 0.75rem; border-radius: 10px; background: <?= $metodoPago === 'Efectivo' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.02)' ?>; border: 1px solid <?= $metodoPago === 'Efectivo' ? '#10b981' : 'var(--border-dark)' ?>; transition: all 0.2s;"
+         class="cuadratura-chip">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+        <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #10b981;">
+          <i class="fa-solid fa-money-bill-wave"></i> Efectivo
+        </span>
+        <?php if ($metodoPago === 'Efectivo'): ?>
+          <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 0.75rem;"></i>
+        <?php endif; ?>
+      </div>
+      <div style="font-size: 1.15rem; font-weight: 700; color: #10b981;">
+        <?= formatCLP($totalesCuadratura['Efectivo']['total']) ?>
+      </div>
+      <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">
+        <?= $totalesCuadratura['Efectivo']['cant'] ?> pago(s) en caja
+      </div>
+    </div>
+
+    <!-- Tarjetas -->
+    <div onclick="filtrarPorMedio('Tarjeta')" 
+         style="cursor: pointer; padding: 0.75rem; border-radius: 10px; background: <?= $metodoPago === 'Tarjeta' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.02)' ?>; border: 1px solid <?= $metodoPago === 'Tarjeta' ? '#3b82f6' : 'var(--border-dark)' ?>; transition: all 0.2s;"
+         class="cuadratura-chip">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+        <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #3b82f6;">
+          <i class="fa-solid fa-credit-card"></i> Tarjetas
+        </span>
+        <?php if ($metodoPago === 'Tarjeta'): ?>
+          <i class="fa-solid fa-circle-check" style="color: #3b82f6; font-size: 0.75rem;"></i>
+        <?php endif; ?>
+      </div>
+      <div style="font-size: 1.15rem; font-weight: 700; color: #3b82f6;">
+        <?= formatCLP($totalesCuadratura['Tarjeta']['total']) ?>
+      </div>
+      <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">
+        <?= $totalesCuadratura['Tarjeta']['cant'] ?> transb./tarjetas
+      </div>
+    </div>
+
+    <!-- Transferencia -->
+    <div onclick="filtrarPorMedio('Transferencia')" 
+         style="cursor: pointer; padding: 0.75rem; border-radius: 10px; background: <?= $metodoPago === 'Transferencia' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.02)' ?>; border: 1px solid <?= $metodoPago === 'Transferencia' ? '#06b6d4' : 'var(--border-dark)' ?>; transition: all 0.2s;"
+         class="cuadratura-chip">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+        <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #06b6d4;">
+          <i class="fa-solid fa-building-columns"></i> Transferencia
+        </span>
+        <?php if ($metodoPago === 'Transferencia'): ?>
+          <i class="fa-solid fa-circle-check" style="color: #06b6d4; font-size: 0.75rem;"></i>
+        <?php endif; ?>
+      </div>
+      <div style="font-size: 1.15rem; font-weight: 700; color: #06b6d4;">
+        <?= formatCLP($totalesCuadratura['Transferencia']['total']) ?>
+      </div>
+      <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">
+        <?= $totalesCuadratura['Transferencia']['cant'] ?> transf.
+      </div>
+    </div>
+
+    <!-- Fiado / Crédito -->
+    <div onclick="filtrarPorMedio('Credito Interno')" 
+         style="cursor: pointer; padding: 0.75rem; border-radius: 10px; background: <?= $metodoPago === 'Credito Interno' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255, 255, 255, 0.02)' ?>; border: 1px solid <?= $metodoPago === 'Credito Interno' ? '#f59e0b' : 'var(--border-dark)' ?>; transition: all 0.2s;"
+         class="cuadratura-chip">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+        <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #f59e0b;">
+          <i class="fa-solid fa-handshake"></i> Fiado / Crédito
+        </span>
+        <?php if ($metodoPago === 'Credito Interno'): ?>
+          <i class="fa-solid fa-circle-check" style="color: #f59e0b; font-size: 0.75rem;"></i>
+        <?php endif; ?>
+      </div>
+      <div style="font-size: 1.15rem; font-weight: 700; color: #f59e0b;">
+        <?= formatCLP($totalesCuadratura['Credito Interno']['total']) ?>
+      </div>
+      <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">
+        <?= $totalesCuadratura['Credito Interno']['cant'] ?> fiado(s)
+      </div>
+    </div>
+
+    <?php if ($totalesCuadratura['Puntos']['total'] > 0 || $totalesCuadratura['Vale Devolucion']['total'] > 0): ?>
+      <?php if ($totalesCuadratura['Puntos']['total'] > 0): ?>
+        <div onclick="filtrarPorMedio('Puntos')" 
+             style="cursor: pointer; padding: 0.75rem; border-radius: 10px; background: <?= $metodoPago === 'Puntos' ? 'rgba(234, 179, 8, 0.15)' : 'rgba(255, 255, 255, 0.02)' ?>; border: 1px solid <?= $metodoPago === 'Puntos' ? '#eab308' : 'var(--border-dark)' ?>; transition: all 0.2s;"
+             class="cuadratura-chip">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+            <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #eab308;">
+              <i class="fa-solid fa-star"></i> Puntos
+            </span>
+            <?php if ($metodoPago === 'Puntos'): ?>
+              <i class="fa-solid fa-circle-check" style="color: #eab308; font-size: 0.75rem;"></i>
+            <?php endif; ?>
+          </div>
+          <div style="font-size: 1.15rem; font-weight: 700; color: #eab308;">
+            <?= formatCLP($totalesCuadratura['Puntos']['total']) ?>
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">
+            <?= $totalesCuadratura['Puntos']['cant'] ?> canje(s)
+          </div>
+        </div>
+      <?php endif; ?>
+
+      <?php if ($totalesCuadratura['Vale Devolucion']['total'] > 0): ?>
+        <div onclick="filtrarPorMedio('Vale Devolucion')" 
+             style="cursor: pointer; padding: 0.75rem; border-radius: 10px; background: <?= $metodoPago === 'Vale Devolucion' ? 'rgba(236, 72, 153, 0.15)' : 'rgba(255, 255, 255, 0.02)' ?>; border: 1px solid <?= $metodoPago === 'Vale Devolucion' ? '#ec4899' : 'var(--border-dark)' ?>; transition: all 0.2s;"
+             class="cuadratura-chip">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+            <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #ec4899;">
+              <i class="fa-solid fa-ticket"></i> Vales Dev.
+            </span>
+            <?php if ($metodoPago === 'Vale Devolucion'): ?>
+              <i class="fa-solid fa-circle-check" style="color: #ec4899; font-size: 0.75rem;"></i>
+            <?php endif; ?>
+          </div>
+          <div style="font-size: 1.15rem; font-weight: 700; color: #ec4899;">
+            <?= formatCLP($totalesCuadratura['Vale Devolucion']['total']) ?>
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">
+            <?= $totalesCuadratura['Vale Devolucion']['cant'] ?> vale(s)
+          </div>
+        </div>
+      <?php endif; ?>
+    <?php endif; ?>
+
+    <!-- Pagos Mixtos -->
+    <div onclick="filtrarPorMedio('Mixto')" 
+         style="cursor: pointer; padding: 0.75rem; border-radius: 10px; background: <?= $metodoPago === 'Mixto' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255, 255, 255, 0.02)' ?>; border: 1px solid <?= $metodoPago === 'Mixto' ? '#8b5cf6' : 'var(--border-dark)' ?>; transition: all 0.2s;"
+         class="cuadratura-chip">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+        <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #a78bfa;">
+          <i class="fa-solid fa-arrows-split-up-and-left"></i> Pagos Mixtos
+        </span>
+        <?php if ($metodoPago === 'Mixto'): ?>
+          <i class="fa-solid fa-circle-check" style="color: #a78bfa; font-size: 0.75rem;"></i>
+        <?php endif; ?>
+      </div>
+      <div style="font-size: 1.15rem; font-weight: 700; color: #a78bfa;">
+        <?= formatCLP($totalesCuadratura['Mixto']['total']) ?>
+      </div>
+      <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">
+        <?= $totalesCuadratura['Mixto']['cant'] ?> venta(s) divididas
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Barra de Filtros y Búsqueda -->
 <div class="table-card" style="margin-bottom: 1.5rem; padding: 1.15rem;">
   <form method="GET" action="ventas.php" id="formFiltroVentas" style="display: flex; flex-wrap: wrap; gap: 0.85rem; align-items: flex-end;">
-    <div style="flex: 1; min-width: 140px;">
+    <div style="flex: 1; min-width: 130px;">
       <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">DESDE</label>
       <input type="date" name="desde" id="filtroDesde" value="<?= htmlspecialchars($desde) ?>" class="form-control" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;">
     </div>
 
-    <div style="flex: 1; min-width: 140px;">
+    <div style="flex: 1; min-width: 130px;">
       <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">HASTA</label>
       <input type="date" name="hasta" id="filtroHasta" value="<?= htmlspecialchars($hasta) ?>" class="form-control" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;">
     </div>
 
-    <div style="min-width: 140px;">
+    <div style="min-width: 150px;">
+      <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">MEDIO DE PAGO</label>
+      <select name="metodo_pago" id="selectMetodoPago" class="form-control" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;" onchange="document.getElementById('formFiltroVentas').submit()">
+        <option value="Todos" <?= $metodoPago === 'Todos' ? 'selected' : '' ?>>Todos los medios</option>
+        <option value="Efectivo" <?= $metodoPago === 'Efectivo' ? 'selected' : '' ?>>💵 Efectivo</option>
+        <option value="Tarjeta" <?= $metodoPago === 'Tarjeta' ? 'selected' : '' ?>>💳 Tarjetas (Débito/Crédito)</option>
+        <option value="Transferencia" <?= $metodoPago === 'Transferencia' ? 'selected' : '' ?>>🏦 Transferencia</option>
+        <option value="Credito Interno" <?= $metodoPago === 'Credito Interno' ? 'selected' : '' ?>>🤝 Fiado / Crédito</option>
+        <option value="Puntos" <?= $metodoPago === 'Puntos' ? 'selected' : '' ?>>⭐ Puntos Fidelidad</option>
+        <option value="Vale Devolucion" <?= $metodoPago === 'Vale Devolucion' ? 'selected' : '' ?>>🎟️ Vale Devolución</option>
+        <option value="Mixto" <?= $metodoPago === 'Mixto' ? 'selected' : '' ?>>🔀 Pago Mixto (Combinado)</option>
+      </select>
+    </div>
+
+    <div style="min-width: 130px;">
       <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">TIPO DOC.</label>
       <select name="tipo_doc" class="form-control" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;">
         <option value="Todos" <?= $tipoDoc === 'Todos' ? 'selected' : '' ?>>Todos los docs</option>
@@ -96,7 +307,7 @@
       </select>
     </div>
 
-    <div style="min-width: 130px;">
+    <div style="min-width: 120px;">
       <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">ESTADO</label>
       <select name="estado" class="form-control" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;">
         <option value="Todos" <?= $estado === 'Todos' ? 'selected' : '' ?>>Todos</option>
@@ -105,7 +316,7 @@
       </select>
     </div>
 
-    <div style="flex: 2; min-width: 220px;">
+    <div style="flex: 2; min-width: 200px;">
       <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">BUSCAR POR N° / FOLIO / CLIENTE / RUT</label>
       <div style="position: relative;">
         <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem;"></i>
@@ -117,7 +328,7 @@
       <button type="submit" class="btn btn-primary" style="padding: 0.45rem 1rem; font-size: 0.85rem;">
         <i class="fa-solid fa-filter"></i> Filtrar
       </button>
-      <?php if ($q !== '' || $tipoDoc !== 'Todos' || $estado !== 'Todos' || $desde !== date('Y-m-d') || $hasta !== date('Y-m-d')): ?>
+      <?php if ($q !== '' || $tipoDoc !== 'Todos' || $estado !== 'Todos' || $metodoPago !== 'Todos' || $desde !== date('Y-m-d') || $hasta !== date('Y-m-d')): ?>
         <a href="ventas.php" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.85rem;" title="Restablecer filtros">
           <i class="fa-solid fa-rotate-left"></i>
         </a>
@@ -215,8 +426,90 @@
                   </span>
                 <?php endif; ?>
               </td>
-              <td style="font-size: 0.82rem; color: var(--text-muted);">
-                <?= htmlspecialchars($v['MetodosPago'] ?: 'Efectivo') ?>
+              <td style="font-size: 0.82rem;">
+                <?php
+                  $desgloseRaw = $v['DesglosePagos'] ?? '';
+                  $itemsPago = [];
+                  if (!empty($desgloseRaw)) {
+                      $partes = explode('||', $desgloseRaw);
+                      foreach ($partes as $pRaw) {
+                          $sub = explode(':', $pRaw, 2);
+                          if (count($sub) === 2) {
+                              $itemsPago[] = ['metodo' => trim($sub[0]), 'monto' => (int)$sub[1]];
+                          }
+                      }
+                  }
+                  if (empty($itemsPago)) {
+                      $itemsPago[] = ['metodo' => $v['MetodosPago'] ?: 'Efectivo', 'monto' => (int)$v['MontoTotal']];
+                  }
+                  $esMixto = count($itemsPago) > 1;
+                ?>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                  <?php if ($esMixto): ?>
+                    <span class="badge" style="background: rgba(139, 92, 246, 0.18); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.35); font-size: 0.7rem; align-self: flex-start; padding: 0.15rem 0.4rem;">
+                      <i class="fa-solid fa-arrows-split-up-and-left"></i> Pago Mixto
+                    </span>
+                  <?php endif; ?>
+
+                  <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
+                    <?php foreach ($itemsPago as $ip): ?>
+                      <?php
+                        $mLower = strtolower($ip['metodo']);
+                        $badgeBg = 'rgba(148, 163, 184, 0.15)';
+                        $badgeColor = '#94a3b8';
+                        $badgeBorder = 'rgba(148, 163, 184, 0.3)';
+                        $icon = 'fa-money-bill';
+
+                        if (strpos($mLower, 'efectivo') !== false) {
+                            $badgeBg = 'rgba(16, 185, 129, 0.15)';
+                            $badgeColor = '#34d399';
+                            $badgeBorder = 'rgba(16, 185, 129, 0.3)';
+                            $icon = 'fa-money-bill-wave';
+                        } elseif (strpos($mLower, 'debito') !== false) {
+                            $badgeBg = 'rgba(59, 130, 246, 0.15)';
+                            $badgeColor = '#60a5fa';
+                            $badgeBorder = 'rgba(59, 130, 246, 0.3)';
+                            $icon = 'fa-credit-card';
+                        } elseif (strpos($mLower, 'credito') !== false && (strpos($mLower, 'tarjeta') !== false || strpos($mLower, 'transbank') !== false)) {
+                            $badgeBg = 'rgba(99, 102, 241, 0.15)';
+                            $badgeColor = '#818cf8';
+                            $badgeBorder = 'rgba(99, 102, 241, 0.3)';
+                            $icon = 'fa-credit-card';
+                        } elseif (strpos($mLower, 'tarjeta') !== false || strpos($mLower, 'transbank') !== false) {
+                            $badgeBg = 'rgba(59, 130, 246, 0.15)';
+                            $badgeColor = '#60a5fa';
+                            $badgeBorder = 'rgba(59, 130, 246, 0.3)';
+                            $icon = 'fa-credit-card';
+                        } elseif (strpos($mLower, 'transfer') !== false) {
+                            $badgeBg = 'rgba(6, 182, 212, 0.15)';
+                            $badgeColor = '#22d3ee';
+                            $badgeBorder = 'rgba(6, 182, 212, 0.3)';
+                            $icon = 'fa-building-columns';
+                        } elseif (strpos($mLower, 'interno') !== false || strpos($mLower, 'fiado') !== false || $mLower === 'credito') {
+                            $badgeBg = 'rgba(245, 158, 11, 0.15)';
+                            $badgeColor = '#fbbf24';
+                            $badgeBorder = 'rgba(245, 158, 11, 0.3)';
+                            $icon = 'fa-handshake';
+                        } elseif (strpos($mLower, 'punto') !== false) {
+                            $badgeBg = 'rgba(234, 179, 8, 0.15)';
+                            $badgeColor = '#fde047';
+                            $badgeBorder = 'rgba(234, 179, 8, 0.3)';
+                            $icon = 'fa-star';
+                        } elseif (strpos($mLower, 'vale') !== false) {
+                            $badgeBg = 'rgba(236, 72, 153, 0.15)';
+                            $badgeColor = '#f472b6';
+                            $badgeBorder = 'rgba(236, 72, 153, 0.3)';
+                            $icon = 'fa-ticket';
+                        }
+                      ?>
+                      <span class="badge" style="background: <?= $badgeBg ?>; color: <?= $badgeColor ?>; border: 1px solid <?= $badgeBorder ?>; font-size: 0.76rem; font-weight: 600; padding: 0.2rem 0.5rem; display: inline-flex; align-items: center; gap: 0.3rem;" title="<?= htmlspecialchars($ip['metodo']) ?>: <?= formatCLP($ip['monto']) ?>">
+                        <i class="fa-solid <?= $icon ?>"></i>
+                        <span><?= htmlspecialchars($ip['metodo']) ?></span>
+                        <span style="opacity: 0.95; font-weight: 700;"><?= formatCLP($ip['monto']) ?></span>
+                      </span>
+                    <?php endforeach; ?>
+                  </div>
+                </div>
               </td>
               <td style="text-align: right; font-weight: 700; font-size: 0.95rem; color: <?= $v['Estado'] === 'Completada' ? 'var(--success)' : 'var(--danger)' ?>;">
                 <?= formatCLP($v['MontoTotal']) ?>
@@ -577,6 +870,15 @@ function setPresetFecha(tipo) {
   document.getElementById('filtroDesde').value = desde;
   document.getElementById('filtroHasta').value = hasta;
   document.getElementById('formFiltroVentas').submit();
+}
+
+// Filtro rápido por medio de pago desde la barra de cuadratura
+function filtrarPorMedio(metodo) {
+  const sel = document.getElementById('selectMetodoPago');
+  if (sel) {
+    sel.value = metodo;
+    document.getElementById('formFiltroVentas').submit();
+  }
 }
 
 function formatPesos(num) {
