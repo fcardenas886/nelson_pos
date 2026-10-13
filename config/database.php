@@ -1,10 +1,15 @@
 <?php
 // Version de la app: unica fuente de verdad, para que login y footer nunca queden desincronizados.
-define('APP_VERSION', 'v4.10.0');
+define('APP_VERSION', 'v4.10.1');
 
 // Novedades reales por versión, para la pantalla de bienvenida y el módulo "Acerca de".
 // Registra la cronología completa de la evolución del sistema desde su inicio.
 define('APP_CHANGELOG', [
+    'v4.10.1' => [
+        'Corrección de Botón y Tecla F12 (Cobrar Venta): Resolución del bloqueo del modal interactivo de pago cuando el Club de Puntos está inactivo en el sistema.',
+        'Blindaje Defensivo en Inicialización de Pagos: Validación segura de elementos del DOM en el modal de cobro (canjes, pago mixto y resúmenes) previniendo excepciones de JavaScript.',
+        'Compatibilidad y Estabilidad en POS: Persistencia de estructura con ocultación limpia vía CSS para mantener total sincronía entre scripts y vistas.',
+    ],
     'v4.10.0' => [
         'Filtro por Medio de Pago en Historial de Ventas: Búsqueda y filtrado instantáneo de operaciones por Efectivo, Tarjetas POS (Débito/Crédito), Transferencias bancarias, Fiado / Crédito interno, Puntos, Vales y Pagos Mixtos.',
         'Barra Interactiva de Cuadratura de Medios de Pago: Panel superior de arqueo con totales en CLP y cantidad de transacciones por canal de pago para conciliar diferencias de caja registradora y vouchers de Transbank en un solo clic.',
