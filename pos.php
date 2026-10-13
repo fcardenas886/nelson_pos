@@ -51,6 +51,20 @@ while ($row = $stmtSup->fetch(PDO::FETCH_ASSOC)) {
     $configSupervision[$row['Clave']] = $row['Valor'];
 }
 
+// Cargar reglas de módulos: Crédito Interno / Fiado y Club de Puntos
+$stmtModulos = $pdo->query("SELECT Clave, Valor FROM configuraciones WHERE Clave IN ('CREDITO_INTERNO_ACTIVO', 'LOYALTY_ACTIVO', 'LOYALTY_PORCENTAJE')");
+$configModulos = [
+    'CREDITO_INTERNO_ACTIVO' => 'true',
+    'LOYALTY_ACTIVO' => 'true',
+    'LOYALTY_PORCENTAJE' => '1.0'
+];
+while ($row = $stmtModulos->fetch(PDO::FETCH_ASSOC)) {
+    $configModulos[$row['Clave']] = $row['Valor'];
+}
+$creditoActivo = ($configModulos['CREDITO_INTERNO_ACTIVO'] ?? 'true') === 'true';
+$loyaltyActivo = ($configModulos['LOYALTY_ACTIVO'] ?? 'true') === 'true';
+$loyaltyPorcentaje = (float)($configModulos['LOYALTY_PORCENTAJE'] ?? 1.0);
+
 // Cargar modo operativo del POS (supermercado, tactil, clasico)
 $stmtModo = $pdo->query("SELECT Valor FROM configuraciones WHERE Clave = 'POS_LAYOUT_MODO'");
 $posLayoutModo = $stmtModo ? ($stmtModo->fetchColumn() ?: 'supermercado') : 'supermercado';

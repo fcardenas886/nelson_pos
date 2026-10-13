@@ -95,17 +95,40 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
         <div>
           <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">CLUB DE PUNTOS (FIDELIZACIÓN)</label>
-          <select name="config[LOYALTY_ACTIVO]" class="form-control">
+          <select name="config[LOYALTY_ACTIVO]" id="selectLoyaltyActivo" class="form-control" onchange="document.getElementById('boxLoyaltyPorcentaje').style.display = (this.value === 'true' ? 'block' : 'none');">
             <option value="true" <?= ($config['LOYALTY_ACTIVO'] ?? 'true') === 'true' ? 'selected' : '' ?>>Habilitado (Puntos por Compras)</option>
             <option value="false" <?= ($config['LOYALTY_ACTIVO'] ?? '') === 'false' ? 'selected' : '' ?>>Deshabilitado</option>
           </select>
+          <p style="color: var(--text-muted); font-size: 0.72rem; margin-top: 0.25rem;">Activa o desactiva la acumulación y canje de puntos para clientes en el POS.</p>
         </div>
         <div>
           <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">PAGO A CRÉDITO INTERNO (FIADO)</label>
           <select name="config[CREDITO_INTERNO_ACTIVO]" class="form-control">
             <option value="true" <?= ($config['CREDITO_INTERNO_ACTIVO'] ?? 'true') === 'true' ? 'selected' : '' ?>>Permitir Ventas Fiadas</option>
-            <option value="false" <?= ($config['CREDITO_INTERNO_ACTIVO'] ?? '') === 'false' ? 'selected' : '' ?>>Solo Pago Inmediato</option>
+            <option value="false" <?= ($config['CREDITO_INTERNO_ACTIVO'] ?? '') === 'false' ? 'selected' : '' ?>>Solo Pago Inmediato (Bloquear Fiado)</option>
           </select>
+          <p style="color: var(--text-muted); font-size: 0.72rem; margin-top: 0.25rem;">Si se elige "Solo Pago Inmediato", el POS oculta y bloquea completamente la opción de fiado en caja.</p>
+        </div>
+      </div>
+
+      <!-- Ajuste del % de Puntos cuando está habilitado -->
+      <div id="boxLoyaltyPorcentaje" style="<?= ($config['LOYALTY_ACTIVO'] ?? 'true') === 'false' ? 'display: none;' : '' ?> margin-top: 0.5rem; background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 8px; padding: 0.85rem 1rem;">
+        <div style="display: grid; grid-template-columns: 240px 1fr; gap: 1rem; align-items: center;">
+          <div>
+            <label style="font-size: 0.8rem; color: #818cf8; font-weight: 700; display: block; margin-bottom: 0.3rem;">
+              <i class="fa-solid fa-percent"></i> PORCENTAJE DE PUNTOS (%)
+            </label>
+            <div style="position: relative;">
+              <input type="number" step="0.1" min="0.1" max="100" name="config[LOYALTY_PORCENTAJE]" value="<?= htmlspecialchars($config['LOYALTY_PORCENTAJE'] ?? '1.0') ?>" class="form-control" style="padding-right: 2.2rem; font-weight: 700;">
+              <span style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-weight: 700;">%</span>
+            </div>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;">
+            <strong style="color: var(--text);">¿Cómo se calculan los puntos ganados?</strong><br>
+            Cada 1 punto equivale a <strong>$1 CLP</strong> de descuento.<br>
+            • Si configuras <strong>1.0%</strong>: por cada <strong>$1.000</strong> de compra el cliente gana <strong>10 puntos</strong> ($10 de descuento).<br>
+            • Si configuras <strong>0.1%</strong>: por cada <strong>$1.000</strong> de compra el cliente gana <strong>1 punto</strong> ($1 de descuento).
+          </div>
         </div>
       </div>
 

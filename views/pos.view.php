@@ -354,15 +354,20 @@
             <option value="" data-puntos="0">Cliente Genérico (Público General)</option>
             <?php foreach ($clientes as $cl): ?>
               <option value="<?= $cl['ClienteID'] ?>" data-puntos="<?= (int)$cl['PuntosAcumulados'] ?>" data-limite="<?= (int)($cl['LimiteCredito'] ?? 0) ?>" data-cupo="<?= max(0, (int)($cl['LimiteCredito'] ?? 0) - (int)($cl['SaldoDeudor'] ?? 0)) ?>">
-                <?= htmlspecialchars($cl['Nombre']) ?> (<?= number_format($cl['PuntosAcumulados'], 0, ',', '.') ?> pts)
+                <?= htmlspecialchars($cl['Nombre']) ?><?= $loyaltyActivo ? ' (' . number_format($cl['PuntosAcumulados'], 0, ',', '.') . ' pts)' : '' ?>
               </option>
             <?php endforeach; ?>
           </select>
           <div id="pmClienteCard" class="pm-cliente-card" style="display: none;">
             <div class="pm-badges">
-              <span id="pmBadgePuntos" class="pm-badge pts"><i class="fa-solid fa-star"></i> 0 pts</span>
-              <span id="pmBadgeCupo" class="pm-badge cupo"><i class="fa-solid fa-handshake"></i> Cupo $0</span>
+              <?php if ($loyaltyActivo): ?>
+                <span id="pmBadgePuntos" class="pm-badge pts"><i class="fa-solid fa-star"></i> 0 pts</span>
+              <?php endif; ?>
+              <?php if ($creditoActivo): ?>
+                <span id="pmBadgeCupo" class="pm-badge cupo"><i class="fa-solid fa-handshake"></i> Cupo $0</span>
+              <?php endif; ?>
             </div>
+            <?php if ($loyaltyActivo): ?>
             <div id="pmCanjeBox">
               <div id="pmCanjeForm" class="pm-canje">
                 <input type="number" id="puntosCanjeInput" class="form-control" min="1" step="1" placeholder="Puntos a usar" style="flex: 1; min-width: 0;" onkeydown="if(event.key==='Enter'){event.preventDefault();aplicarCanjePuntos();}">
@@ -376,6 +381,7 @@
               </div>
               <small style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-top: 0.3rem;">1 punto = $1 de descuento sobre el total.</small>
             </div>
+            <?php endif; ?>
           </div>
         </div>
 
@@ -446,14 +452,19 @@
               <span class="pm-check"><i class="fa-solid fa-check"></i></span>
               <i class="fa-solid fa-building-columns"></i> Transferencia
             </button>
+            <?php if ($creditoActivo): ?>
             <button type="button" class="btn-metodo" data-metodo="Credito" onclick="setFormaPago('Credito', this)" style="--m-color: #f59e0b;">
               <span class="pm-check"><i class="fa-solid fa-check"></i></span>
               <i class="fa-solid fa-handshake"></i> Fiado / Crédito
             </button>
+            <?php endif; ?>
+
+            <?php if ($loyaltyActivo): ?>
             <button type="button" class="btn-metodo" data-metodo="Puntos" onclick="setFormaPago('Puntos', this)" style="--m-color: #eab308;">
               <span class="pm-check"><i class="fa-solid fa-check"></i></span>
               <i class="fa-solid fa-star"></i> Puntos
             </button>
+            <?php endif; ?>
             <button type="button" class="btn-metodo" data-metodo="Mixto" onclick="setFormaPago('Mixto', this)" style="--m-color: #8b5cf6;">
               <span class="pm-check"><i class="fa-solid fa-check"></i></span>
               <i class="fa-solid fa-layer-group"></i> Pago Mixto
@@ -510,10 +521,14 @@
               <label class="pm-label" for="mixtoTransf"><i class="fa-solid fa-building-columns" style="color:#06b6d4"></i> Transferencia</label>
               <input type="number" id="mixtoTransf" class="form-control" placeholder="0" oninput="actualizarResumenMixto()">
             </div>
+            <?php if ($creditoActivo): ?>
             <div>
               <label class="pm-label" for="mixtoFiado"><i class="fa-solid fa-handshake" style="color:#f59e0b"></i> Fiado</label>
               <input type="number" id="mixtoFiado" class="form-control" placeholder="0" oninput="actualizarResumenMixto()">
             </div>
+            <?php else: ?>
+              <input type="hidden" id="mixtoFiado" value="0">
+            <?php endif; ?>
           </div>
           <div class="pm-money">
             <div>
@@ -918,6 +933,9 @@ async function ejecutarConsultaPrecio() {
   window.POS_LAYOUT_MODO = "<?= htmlspecialchars($posLayoutModo ?? 'supermercado') ?>";
   window.CSRF_TOKEN = "<?= htmlspecialchars(csrfToken()) ?>";
   window.APP_VERSION = "<?= APP_VERSION ?>";
+  window.CREDITO_INTERNO_ACTIVO = <?= $creditoActivo ? 'true' : 'false' ?>;
+  window.LOYALTY_ACTIVO = <?= $loyaltyActivo ? 'true' : 'false' ?>;
+  window.LOYALTY_PORCENTAJE = <?= json_encode($loyaltyPorcentaje) ?>;
   window.LOCAL_CONFIG = <?= json_encode([
     'MINIMARKET_NOMBRE' => $cfgLocal['MINIMARKET_NOMBRE'] ?? 'Minimarket',
     'MINIMARKET_RUT' => $cfgLocal['MINIMARKET_RUT'] ?? '',

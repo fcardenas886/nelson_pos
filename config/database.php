@@ -9,6 +9,8 @@ define('APP_CHANGELOG', [
         'Filtro por Medio de Pago en Historial de Ventas: Búsqueda y filtrado instantáneo de operaciones por Efectivo, Tarjetas POS (Débito/Crédito), Transferencias bancarias, Fiado / Crédito interno, Puntos, Vales y Pagos Mixtos.',
         'Barra Interactiva de Cuadratura de Medios de Pago: Panel superior de arqueo con totales en CLP y cantidad de transacciones por canal de pago para conciliar diferencias de caja registradora y vouchers de Transbank en un solo clic.',
         'Desglose Visual con Badges e Importes en Pagos Mixtos: Visualización en la tabla con insignias a color e importes individuales cuando una venta se paga con múltiples medios combinados (ej. Efectivo + Débito).',
+        'Control Real de Crédito / Fiado: Si se desactiva en Configuración, el POS oculta el botón de Fiado, bloquea el campo en Pago Mixto y rechaza en el backend cualquier intento de cobro a crédito.',
+        'Configuración Dinámica de % de Puntos: Campo en Configuración para ajustar libremente el porcentaje de acumulación de puntos (ej. 1.0% = 10 pts por $1.000; 0.1% = 1 pt por $1.000) y bloqueo de acumulación y canje si el Club de Puntos está inactivo.',
     ],
     'v4.9.0' => [
         'Agente Asistente de IA Integrado (Tipo Chat): Asistente inteligente flotante en todas las pantallas para resolver dudas operativas y guiar en el uso del sistema (atajo Alt + I).',

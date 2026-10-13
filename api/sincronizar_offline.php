@@ -57,7 +57,15 @@ try {
         $turnoID = (int)$turno['TurnoID'];
     }
 
-    $permitirStockNegativo = $pdo->query("SELECT Valor FROM configuraciones WHERE Clave = 'PERMITIR_STOCK_NEGATIVO'")->fetchColumn() === 'true';
+    $cfgStmt = $pdo->query("SELECT Clave, Valor FROM configuraciones WHERE Clave IN ('PERMITIR_STOCK_NEGATIVO', 'CREDITO_INTERNO_ACTIVO', 'LOYALTY_ACTIVO', 'LOYALTY_PORCENTAJE')");
+    $configApp = [];
+    while ($cr = $cfgStmt->fetch(PDO::FETCH_ASSOC)) {
+        $configApp[$cr['Clave']] = $cr['Valor'];
+    }
+    $permitirStockNegativo = ($configApp['PERMITIR_STOCK_NEGATIVO'] ?? 'false') === 'true';
+    $creditoHabilitado = ($configApp['CREDITO_INTERNO_ACTIVO'] ?? 'true') === 'true';
+    $loyaltyHabilitado = ($configApp['LOYALTY_ACTIVO'] ?? 'true') === 'true';
+    $loyaltyPorcentaje = (float)($configApp['LOYALTY_PORCENTAJE'] ?? 1.0);
 
     $sincronizadas = [];
     $errores = [];
@@ -144,8 +152,10 @@ try {
 
             $montoTotal = max(0, $subtotalBruto - $descGlobal);
             $montoNeto = (int)round($montoTotal / 1.19);
-            $montoIva = $montoTotal - $montoNeto;
-            $puntosGanados = (int)floor($montoTotal / 1000);
+            $puntosGanados = 0;
+            if ($loyaltyHabilitado && $loyaltyPorcentaje > 0) {
+                $puntosGanados = (int)floor($montoTotal * ($loyaltyPorcentaje / 100));
+            }
 
             // 1. Insertar cabecera de venta
             $stmtVenta->execute([
@@ -203,8 +213,15 @@ try {
                     $montoP = (int)($p['monto'] ?? $montoTotal);
                     if ($montoP > 0) {
                         $metodoP = $p['metodo'] ?? 'Efectivo';
-                        if (in_array($metodoP, ['Credito', 'Fiado'], true)) {
+                        if (in_array($metodoP, ['Credito', 'Fiado', 'Credito Interno'], true)) {
                             $metodoP = 'Credito Interno';
+                            if (!$creditoHabilitado) {
+                                throw new Exception("Las ventas a crédito/fiado están deshabilitadas en la configuración del sistema.");
+                            }
+                        } elseif ($metodoP === 'Puntos') {
+                            if (!$loyaltyHabilitado) {
+                                throw new Exception("El Club de Puntos está deshabilitado en la configuración del sistema.");
+                            }
                         }
                         $stmtPago->execute([
                             ':vid' => $ventaID,

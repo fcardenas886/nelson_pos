@@ -1363,21 +1363,44 @@ function onClientePagoChange() {
   } else {
     card.style.display = 'flex';
     const bPts = document.getElementById('pmBadgePuntos');
-    bPts.innerHTML = `<i class="fa-solid fa-star"></i> ${formatNumber(cli.puntos)} pts`;
-    bPts.className = 'pm-badge ' + (cli.puntos > 0 ? 'pts' : 'sin');
+    if (bPts) {
+      if (window.LOYALTY_ACTIVO === false) {
+        bPts.style.display = 'none';
+      } else {
+        bPts.style.display = 'inline-flex';
+        bPts.innerHTML = `<i class="fa-solid fa-star"></i> ${formatNumber(cli.puntos)} pts`;
+        bPts.className = 'pm-badge ' + (cli.puntos > 0 ? 'pts' : 'sin');
+      }
+    }
     const bCupo = document.getElementById('pmBadgeCupo');
-    bCupo.innerHTML = cli.limite > 0
-      ? `<i class="fa-solid fa-handshake"></i> Cupo fiado $${formatNumber(cli.cupo)}`
-      : `<i class="fa-solid fa-handshake"></i> Sin crédito`;
-    bCupo.className = 'pm-badge ' + (cli.limite > 0 && cli.cupo > 0 ? 'cupo' : 'sin');
-    document.getElementById('pmCanjeBox').style.display = cli.puntos > 0 ? 'block' : 'none';
+    if (bCupo) {
+      if (window.CREDITO_INTERNO_ACTIVO === false) {
+        bCupo.style.display = 'none';
+      } else {
+        bCupo.style.display = 'inline-flex';
+        bCupo.innerHTML = cli.limite > 0
+          ? `<i class="fa-solid fa-handshake"></i> Cupo fiado $${formatNumber(cli.cupo)}`
+          : `<i class="fa-solid fa-handshake"></i> Sin crédito`;
+        bCupo.className = 'pm-badge ' + (cli.limite > 0 && cli.cupo > 0 ? 'cupo' : 'sin');
+      }
+    }
+    const cBox = document.getElementById('pmCanjeBox');
+    if (cBox) {
+      cBox.style.display = (window.LOYALTY_ACTIVO !== false && cli.puntos > 0) ? 'block' : 'none';
+    }
     const inp = document.getElementById('puntosCanjeInput');
-    inp.placeholder = `Hasta ${formatNumber(Math.min(cli.puntos, getCartTotal()))} pts`;
+    if (inp) {
+      inp.placeholder = `Hasta ${formatNumber(Math.min(cli.puntos, getCartTotal()))} pts`;
+    }
   }
   refrescarResumenPago();
 }
 
 function aplicarCanjePuntos() {
+  if (window.LOYALTY_ACTIVO === false) {
+    toast('El Club de Puntos está deshabilitado en la configuración.', 'warn');
+    return;
+  }
   const cli = getClientePago();
   if (!cli) return;
   const inp = document.getElementById('puntosCanjeInput');
@@ -1635,6 +1658,10 @@ async function confirmarPagoModal() {
       return;
     }
     if (fiado > 0) {
+      if (window.CREDITO_INTERNO_ACTIVO === false) {
+        toast('Las ventas a crédito/fiado están deshabilitadas en la configuración del sistema.', 'error');
+        return;
+      }
       if (!clienteID) {
         toast('Selecciona el cliente para cargar una parte a fiado.', 'warn');
         return;
@@ -1653,6 +1680,14 @@ async function confirmarPagoModal() {
     if (transf > 0) pagos.push({ metodo: 'Transferencia', monto: transf });
     if (fiado > 0) pagos.push({ metodo: 'Credito Interno', monto: fiado });
   } else if (metodoSeleccionadoModal === 'Credito' || metodoSeleccionadoModal === 'Puntos') {
+    if (metodoSeleccionadoModal === 'Credito' && window.CREDITO_INTERNO_ACTIVO === false) {
+      toast('Las ventas a crédito/fiado están deshabilitadas en la configuración del sistema.', 'error');
+      return;
+    }
+    if (metodoSeleccionadoModal === 'Puntos' && window.LOYALTY_ACTIVO === false) {
+      toast('El canje de puntos está deshabilitado en la configuración del sistema.', 'error');
+      return;
+    }
     if (!clienteID) {
       toast('Debes seleccionar un Cliente para pagos a Crédito / Fiado o Puntos.', 'warn');
       return;

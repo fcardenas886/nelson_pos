@@ -46,7 +46,15 @@ try {
     }
     $turnoID = $turno['TurnoID'];
 
-    $permitirStockNegativo = $pdo->query("SELECT Valor FROM configuraciones WHERE Clave = 'PERMITIR_STOCK_NEGATIVO'")->fetchColumn() === 'true';
+    $cfgStmt = $pdo->query("SELECT Clave, Valor FROM configuraciones WHERE Clave IN ('PERMITIR_STOCK_NEGATIVO', 'CREDITO_INTERNO_ACTIVO', 'LOYALTY_ACTIVO', 'LOYALTY_PORCENTAJE')");
+    $configApp = [];
+    while ($cr = $cfgStmt->fetch(PDO::FETCH_ASSOC)) {
+        $configApp[$cr['Clave']] = $cr['Valor'];
+    }
+    $permitirStockNegativo = ($configApp['PERMITIR_STOCK_NEGATIVO'] ?? 'false') === 'true';
+    $creditoHabilitado = ($configApp['CREDITO_INTERNO_ACTIVO'] ?? 'true') === 'true';
+    $loyaltyHabilitado = ($configApp['LOYALTY_ACTIVO'] ?? 'true') === 'true';
+    $loyaltyPorcentaje = (float)($configApp['LOYALTY_PORCENTAJE'] ?? 1.0);
 
     $pdo->beginTransaction();
 
@@ -202,8 +210,11 @@ try {
     $montoNeto = (int)round($montoTotal / 1.19);
     $montoIva = $montoTotal - $montoNeto;
 
-    // Calcular puntos ganados (1 punto por cada $1.000 en compras)
-    $puntosGanados = (int)floor($montoTotal / 1000);
+    // Calcular puntos ganados (solo si el Club de Puntos está habilitado)
+    $puntosGanados = 0;
+    if ($loyaltyHabilitado && $loyaltyPorcentaje > 0) {
+        $puntosGanados = (int)floor($montoTotal * ($loyaltyPorcentaje / 100));
+    }
 
     // 2. Insertar Venta
     $stmtVenta = $pdo->prepare("
@@ -300,9 +311,17 @@ try {
     $cliente = null;
     $necesitaCliente = false;
     foreach ($pagosList as $pago) {
-        if (in_array($pago['metodo'] ?? '', ['Credito', 'Fiado', 'Credito Interno', 'Puntos'], true)) {
+        $pMetodo = $pago['metodo'] ?? '';
+        if (in_array($pMetodo, ['Credito', 'Fiado', 'Credito Interno'], true)) {
+            if (!$creditoHabilitado) {
+                throw new Exception("Las ventas a crédito/fiado están deshabilitadas en la configuración del sistema.");
+            }
             $necesitaCliente = true;
-            break;
+        } elseif ($pMetodo === 'Puntos') {
+            if (!$loyaltyHabilitado) {
+                throw new Exception("El canje de puntos está deshabilitado en la configuración del sistema.");
+            }
+            $necesitaCliente = true;
         }
     }
     if ($necesitaCliente) {
@@ -333,6 +352,9 @@ try {
         }
 
         if ($metodo === 'Credito Interno') {
+            if (!$creditoHabilitado) {
+                throw new Exception("Las ventas a crédito/fiado están deshabilitadas en la configuración del sistema.");
+            }
             $creditoUsado += $montoPago;
             $limite = (int)($cliente['LimiteCredito'] ?? 0);
             $saldoActual = (int)($cliente['SaldoDeudor'] ?? 0);
@@ -340,6 +362,9 @@ try {
                 throw new Exception("El cliente no tiene cupo de crédito suficiente (disponible: " . formatCLP(max(0, $limite - $saldoActual)) . ").");
             }
         } elseif ($metodo === 'Puntos') {
+            if (!$loyaltyHabilitado) {
+                throw new Exception("El canje de puntos está deshabilitado en la configuración del sistema.");
+            }
             $puntosUsados += $montoPago;
             $puntosDisponibles = (int)($cliente['PuntosAcumulados'] ?? 0);
             if ($puntosUsados > $puntosDisponibles) {
