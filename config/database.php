@@ -1,10 +1,15 @@
 <?php
 // Version de la app: unica fuente de verdad, para que login y footer nunca queden desincronizados.
-define('APP_VERSION', 'v4.9.0');
+define('APP_VERSION', 'v4.10.0');
 
 // Novedades reales por versión, para la pantalla de bienvenida y el módulo "Acerca de".
 // Registra la cronología completa de la evolución del sistema desde su inicio.
 define('APP_CHANGELOG', [
+    'v4.10.0' => [
+        'Filtro por Medio de Pago en Historial de Ventas: Búsqueda y filtrado instantáneo de operaciones por Efectivo, Tarjetas POS (Débito/Crédito), Transferencias bancarias, Fiado / Crédito interno, Puntos, Vales y Pagos Mixtos.',
+        'Barra Interactiva de Cuadratura de Medios de Pago: Panel superior de arqueo con totales en CLP y cantidad de transacciones por canal de pago para conciliar diferencias de caja registradora y vouchers de Transbank en un solo clic.',
+        'Desglose Visual con Badges e Importes en Pagos Mixtos: Visualización en la tabla con insignias a color e importes individuales cuando una venta se paga con múltiples medios combinados (ej. Efectivo + Débito).',
+    ],
     'v4.9.0' => [
         'Agente Asistente de IA Integrado (Tipo Chat): Asistente inteligente flotante en todas las pantallas para resolver dudas operativas y guiar en el uso del sistema (atajo Alt + I).',
         'Diseño Compacto y Ergonómico: Ventana estilizada no invasiva (330x440px) y botón flotante discreto para operar en el POS sin obstaculizar la vista.',
