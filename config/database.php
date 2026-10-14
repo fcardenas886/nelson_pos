@@ -1,10 +1,16 @@
 <?php
 // Version de la app: unica fuente de verdad, para que login y footer nunca queden desincronizados.
-define('APP_VERSION', 'v4.10.1');
+define('APP_VERSION', 'v4.10.2');
 
 // Novedades reales por versión, para la pantalla de bienvenida y el módulo "Acerca de".
 // Registra la cronología completa de la evolución del sistema desde su inicio.
 define('APP_CHANGELOG', [
+    'v4.10.2' => [
+        'Sincronización Histórica de Costos de Compra: Corrección y recálculo de costos en ventas que registraron costo $0 para reflejar el costo de compra actual del catálogo en informes de utilidades y márgenes comerciales.',
+        'Propagación Automática de Costos: Actualización instantánea de ventas pasadas con costo $0 al editar productos en catálogo o mediante el Actualizador Rápido de Precios.',
+        'Herramienta de Auditoría y Sincronización Manual: Nuevo botón "Sincronizar Costos $0" en la pestaña Utilidades y Márgenes de Reportes con endpoint seguro para administradores.',
+        'Calibración y Memoria Conversacional en Asistente de IA: Reducción drástica de latencia (thinkingBudget=0), timeout extendido a 12s, soporte de contexto multi-turno en sessionStorage y nuevas reglas operativas locales para anulación de ventas, cobro con tarjeta y apertura de gaveta.',
+    ],
     'v4.10.1' => [
         'Corrección de Botón y Tecla F12 (Cobrar Venta): Resolución del bloqueo del modal interactivo de pago cuando el Club de Puntos está inactivo en el sistema.',
         'Blindaje Defensivo en Inicialización de Pagos: Validación segura de elementos del DOM en el modal de cobro (canjes, pago mixto y resúmenes) previniendo excepciones de JavaScript.',
