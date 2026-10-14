@@ -423,6 +423,81 @@ try {
         exit;
     }
 
+    // -------------------------------------------------------------
+    // Estimar Impuestos a Pagar del Mes (F29: IVA Débito - IVA Crédito + PPM)
+    // -------------------------------------------------------------
+    if ($action === 'estimar_impuestos') {
+        $periodo = trim($input['periodo'] ?? date('Ym'));
+        $tasaPpm = (float)($input['tasa_ppm'] ?? 0.25); // 0.25% tasa típica ProPyme
+
+        // 1. Totales de Ventas (Débito Fiscal)
+        $stmtV = $pdo->prepare("
+            SELECT 
+                COALESCE(SUM(CASE WHEN TipoDTE = 61 THEN -MontoNeto ELSE MontoNeto END), 0) as neto_ventas,
+                COALESCE(SUM(CASE WHEN TipoDTE = 61 THEN -MontoIVA ELSE MontoIVA END), 0) as iva_debito,
+                COALESCE(SUM(CASE WHEN TipoDTE = 61 THEN -MontoTotal ELSE MontoTotal END), 0) as total_ventas,
+                COUNT(ID) as cant_docs_ventas
+            FROM sii_documentos_rcv
+            WHERE Operacion = 'VENTA' AND Periodo = :per
+        ");
+        $stmtV->execute([':per' => $periodo]);
+        $ventas = $stmtV->fetch(PDO::FETCH_ASSOC);
+
+        // 2. Totales de Compras (Crédito Fiscal)
+        $stmtC = $pdo->prepare("
+            SELECT 
+                COALESCE(SUM(CASE WHEN TipoDTE = 61 THEN -MontoNeto ELSE MontoNeto END), 0) as neto_compras,
+                COALESCE(SUM(CASE WHEN TipoDTE = 61 THEN -MontoIVA ELSE MontoIVA END), 0) as iva_credito,
+                COALESCE(SUM(CASE WHEN TipoDTE = 61 THEN -MontoTotal ELSE MontoTotal END), 0) as total_compras,
+                COUNT(ID) as cant_docs_compras
+            FROM sii_documentos_rcv
+            WHERE Operacion = 'COMPRA' AND Periodo = :per
+        ");
+        $stmtC->execute([':per' => $periodo]);
+        $compras = $stmtC->fetch(PDO::FETCH_ASSOC);
+
+        $netoVentas = (int)$ventas['neto_ventas'];
+        $ivaDebito = (int)$ventas['iva_debito'];
+        $netoCompras = (int)$compras['neto_compras'];
+        $ivaCredito = (int)$compras['iva_credito'];
+
+        $diferenciaIva = $ivaDebito - $ivaCredito;
+        $ivaAPagar = max(0, $diferenciaIva);
+        $remanenteFavor = max(0, -$diferenciaIva);
+
+        // PPM estimado sobre venta neta
+        $ppmEstimado = (int)round($netoVentas * ($tasaPpm / 100));
+        $totalF29 = $ivaAPagar + $ppmEstimado;
+
+        echo json_encode([
+            'success' => true,
+            'periodo' => $periodo,
+            'ventas' => [
+                'neto' => $netoVentas,
+                'iva_debito' => $ivaDebito,
+                'total' => (int)$ventas['total_ventas'],
+                'cant_documentos' => (int)$ventas['cant_docs_ventas']
+            ],
+            'compras' => [
+                'neto' => $netoCompras,
+                'iva_credito' => $ivaCredito,
+                'total' => (int)$compras['total_compras'],
+                'cant_documentos' => (int)$compras['cant_docs_compras']
+            ],
+            'calculo' => [
+                'iva_debito' => $ivaDebito,
+                'iva_credito' => $ivaCredito,
+                'diferencia_iva' => $diferenciaIva,
+                'iva_a_pagar' => $ivaAPagar,
+                'remanente_a_favor' => $remanenteFavor,
+                'tasa_ppm' => $tasaPpm,
+                'ppm_estimado' => $ppmEstimado,
+                'total_f29_estimado' => $totalF29
+            ]
+        ]);
+        exit;
+    }
+
     echo json_encode(['success' => false, 'error' => 'Acción no reconocida.']);
 
 } catch (Exception $e) {

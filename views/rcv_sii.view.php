@@ -53,6 +53,10 @@
               style="padding: 0.45rem 1rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-muted); transition: all 0.2s;">
         <i class="fa-solid fa-receipt"></i> Ventas (SII)
       </button>
+      <button type="button" id="tabNavImpuestos" onclick="cambiarVistaPrincipal('IMPUESTOS')" 
+              style="padding: 0.45rem 1rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-muted); transition: all 0.2s;">
+        <i class="fa-solid fa-coins"></i> 💰 Estimador Impuestos (F29)
+      </button>
     </div>
 
     <!-- Selectores de Período (Mes y Año) -->
@@ -306,6 +310,274 @@
   </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- VISTA 4: ESTIMADOR DE IMPUESTOS (F29: IVA DÉBITO - CRÉDITO + PPM) -->
+<!-- ========================================================================= -->
+<div id="seccionImpuestos" style="display: none;">
+
+  <!-- Banner Informativo del Período -->
+  <div class="table-card" style="padding: 1rem 1.25rem; margin-bottom: 1.5rem; border-left: 4px solid #818cf8; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-calculator" style="color: #818cf8;"></i>
+        Proyección de Impuestos Mensuales (Formulario 29)
+      </h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; margin-bottom: 0;">
+        Estimación automática calculada a partir de compras recibidas y ventas informadas en el SII para <strong id="lblPeriodoImpuestosTexto" style="color: var(--text-main);">este mes</strong>.
+      </p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <button onclick="forzarSincronizacionSII()" class="btn btn-secondary" style="font-size: 0.85rem;">
+        <i class="fa-solid fa-arrows-rotate"></i> Sincronizar Mes Completo
+      </button>
+      <button onclick="imprimirResumenImpuestos()" class="btn btn-secondary" style="font-size: 0.85rem;">
+        <i class="fa-solid fa-print"></i> Imprimir Reporte
+      </button>
+    </div>
+  </div>
+
+  <!-- Alerta si no hay datos sincronizados -->
+  <div id="alertaSinDatosImpuestos" style="display: none; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b; font-size: 1.5rem;"></i>
+      <div>
+        <strong style="color: #f59e0b;">Sin registros fiscales para este período en la base de datos local.</strong>
+        <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
+          Haz clic en sincronizar para consultar automáticamente las compras y ventas del mes en el SII.
+        </div>
+      </div>
+    </div>
+    <button onclick="forzarSincronizacionSII()" class="btn btn-primary" style="font-size: 0.85rem;">
+      <i class="fa-solid fa-arrows-rotate"></i> Sincronizar Ahora
+    </button>
+  </div>
+
+  <!-- Grid Comparativo: Ventas vs Compras vs PPM -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
+    
+    <!-- TARJETA 1: VENTAS (IVA DÉBITO FISCAL) -->
+    <div class="table-card" style="padding: 1.25rem; border-top: 4px solid #38bdf8;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.5rem; color: #38bdf8;">
+          <i class="fa-solid fa-receipt"></i> Ventas (Débito Fiscal)
+        </h3>
+        <span class="badge" id="badgeCantVentasImp" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 600;">
+          0 Docs
+        </span>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        Ventas totales informadas al SII (Boletas Mercado Pago + Facturas emitidas)
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-dark);">
+          <span style="color: var(--text-muted);">Venta Neta (Base Imponible):</span>
+          <strong id="impVentaNeto" style="font-family: monospace; font-size: 1rem;">$0</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.95rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-dark);">
+          <span style="color: #38bdf8; font-weight: 600;">(+) IVA Débito Fiscal (19%):</span>
+          <strong id="impIvaDebito" style="font-family: monospace; font-size: 1.1rem; color: #38bdf8;">$0</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; padding-top: 0.25rem;">
+          <span style="color: var(--text-muted);">Total Bruto en Ventas:</span>
+          <strong id="impVentaTotal" style="font-family: monospace; font-size: 1rem; color: var(--text-main);">$0</strong>
+        </div>
+      </div>
+
+      <div style="margin-top: 1.25rem; background: rgba(56, 189, 248, 0.08); border-radius: 8px; padding: 0.65rem 0.85rem; font-size: 0.8rem; color: var(--text-muted);">
+        <i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i> Este es el impuesto recaudado que le cobraste a tus clientes y que debes rendir al Fisco.
+      </div>
+    </div>
+
+    <!-- TARJETA 2: COMPRAS (IVA CRÉDITO FISCAL) -->
+    <div class="table-card" style="padding: 1.25rem; border-top: 4px solid #10b981;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.5rem; color: #10b981;">
+          <i class="fa-solid fa-truck-ramp-box"></i> Compras (Crédito Fiscal)
+        </h3>
+        <span class="badge" id="badgeCantComprasImp" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;">
+          0 Facturas
+        </span>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        Facturas de mercadería e insumos recibidas de tus proveedores en el mes
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-dark);">
+          <span style="color: var(--text-muted);">Compra Neta (Afecta):</span>
+          <strong id="impCompraNeto" style="font-family: monospace; font-size: 1rem;">$0</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.95rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-dark);">
+          <span style="color: #10b981; font-weight: 600;">(-) IVA Crédito Fiscal (19%):</span>
+          <strong id="impIvaCredito" style="font-family: monospace; font-size: 1.1rem; color: #10b981;">$0</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; padding-top: 0.25rem;">
+          <span style="color: var(--text-muted);">Total Bruto en Compras:</span>
+          <strong id="impCompraTotal" style="font-family: monospace; font-size: 1rem; color: var(--text-main);">$0</strong>
+        </div>
+      </div>
+
+      <div style="margin-top: 1.25rem; background: rgba(16, 185, 129, 0.08); border-radius: 8px; padding: 0.65rem 0.85rem; font-size: 0.8rem; color: var(--text-muted);">
+        <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Este IVA ya se lo pagaste a tus proveedores y se resta 100% de tus impuestos a pagar.
+      </div>
+    </div>
+
+    <!-- TARJETA 3: PPM (PAGO PROVISIONAL MENSUAL) -->
+    <div class="table-card" style="padding: 1.25rem; border-top: 4px solid #f59e0b;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.5rem; color: #f59e0b;">
+          <i class="fa-solid fa-percent"></i> PPM (Anticipo de Renta)
+        </h3>
+        <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; font-weight: 600;">
+          Renta F22
+        </span>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+        Anticipo mensual de impuesto a la renta calculado sobre las ventas netas
+      </p>
+
+      <div style="margin-bottom: 1rem;">
+        <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.35rem;">
+          Tasa PPM Aplicable:
+        </label>
+        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+          <button type="button" class="btn btn-secondary btn-tasa-ppm" onclick="seleccionarTasaPpm(0.125, this)" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;">0.125%</button>
+          <button type="button" class="btn btn-primary btn-tasa-ppm" onclick="seleccionarTasaPpm(0.25, this)" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;">0.25% (Pyme)</button>
+          <button type="button" class="btn btn-secondary btn-tasa-ppm" onclick="seleccionarTasaPpm(0.50, this)" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;">0.50%</button>
+          <button type="button" class="btn btn-secondary btn-tasa-ppm" onclick="seleccionarTasaPpm(1.00, this)" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;">1.00%</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Personalizada:</span>
+          <input type="number" step="0.01" min="0" max="15" id="inputTasaPpm" value="0.25" class="form-control" 
+                 style="width: 80px; padding: 0.25rem 0.5rem; font-size: 0.85rem;" onchange="ajustarTasaManual(this.value)">
+          <span style="font-size: 0.85rem; font-weight: 600;">%</span>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; font-size: 0.95rem; padding-top: 0.5rem; border-top: 1px solid var(--border-dark);">
+        <span style="color: #f59e0b; font-weight: 600;">(+) PPM Estimado a Pagar:</span>
+        <strong id="impPpmEstimado" style="font-family: monospace; font-size: 1.1rem; color: #f59e0b;">$0</strong>
+      </div>
+
+      <div style="margin-top: 1.25rem; background: rgba(245, 158, 11, 0.08); border-radius: 8px; padding: 0.65rem 0.85rem; font-size: 0.8rem; color: var(--text-muted);">
+        <i class="fa-solid fa-piggy-bank" style="color: #f59e0b;"></i> Este monto no se pierde: se acumula como ahorro para tu declaración anual de renta de abril.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- LIQUIDACIÓN FINAL F29 (RESULTADO DESTACADO) -->
+  <div class="table-card" style="padding: 1.5rem; margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%); border: 2px solid var(--primary); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+      <div>
+        <span class="badge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; font-size: 0.8rem; margin-bottom: 0.4rem; padding: 0.35rem 0.65rem;">
+          RESUMEN TRIBUTARIO MENSUAL
+        </span>
+        <h2 style="font-size: 1.35rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.6rem;">
+          <i class="fa-solid fa-file-invoice-dollar" style="color: var(--primary);"></i>
+          Total Estimado a Pagar F29 (SII)
+        </h2>
+      </div>
+
+      <!-- Estado visual de IVA -->
+      <div id="badgeResultadoIva" style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
+        <!-- Se llena dinámicamente con JS -->
+      </div>
+    </div>
+
+    <!-- Desglose Tipo Factura / Liquidación -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; align-items: center;">
+      
+      <!-- Detalle numérico -->
+      <div style="display: flex; flex-direction: column; gap: 0.65rem; background: rgba(0,0,0,0.25); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-dark);">
+        <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+          <span style="color: var(--text-muted);">(+) IVA Débito (Ventas):</span>
+          <span id="liqIvaDebito" style="font-family: monospace; color: #38bdf8;">$0</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+          <span style="color: var(--text-muted);">(-) IVA Crédito (Compras):</span>
+          <span id="liqIvaCredito" style="font-family: monospace; color: #10b981;">-$0</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.95rem; padding-top: 0.4rem; border-top: 1px dashed var(--border-dark); font-weight: 600;">
+          <span id="lblLiqIvaSubtotal">(=) Subtotal IVA a Pagar:</span>
+          <span id="liqIvaSubtotal" style="font-family: monospace; color: var(--text-main);">$0</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 600;">
+          <span style="color: var(--text-muted);">(+) PPM Anticipo Renta:</span>
+          <span id="liqPpmSubtotal" style="font-family: monospace; color: #f59e0b;">$0</span>
+        </div>
+      </div>
+
+      <!-- Gran Total a Pagar -->
+      <div style="text-align: center; padding: 1rem;">
+        <span style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; display: block; margin-bottom: 0.25rem;">
+          MONTO ESTIMADO DECLARACIÓN F29
+        </span>
+        <div id="liqTotalF29" style="font-size: 2.75rem; font-weight: 800; font-family: monospace; color: #fbbf24; text-shadow: 0 4px 12px rgba(251, 191, 36, 0.25); line-height: 1.1;">
+          $0
+        </div>
+        <p id="txtSubtextoLiquidacion" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; margin-bottom: 0;">
+          A pagar en sii.cl antes del día 20 del mes siguiente
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Banner Remanente a Favor (si aplica) -->
+    <div id="bannerRemanenteFavor" style="display: none; margin-top: 1.25rem; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); padding: 0.85rem 1.1rem; border-radius: 8px; align-items: center; gap: 0.75rem;">
+      <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 1.4rem;"></i>
+      <div style="font-size: 0.85rem; color: var(--text-main);">
+        <strong style="color: #10b981;">¡Tienes Remanente de Crédito Fiscal a Favor!</strong>
+        <span style="margin-left: 4px;">Tus compras con factura superaron tus ventas afectas por <strong id="lblMontoRemanente" style="color: #10b981;">$0</strong>. Este monto no se pierde y quedará como saldo a tu favor para descontar del IVA del mes siguiente.</span>
+      </div>
+    </div>
+
+    <!-- Footer Informativo y Botones de Acción -->
+    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-dark); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; font-size: 0.85rem;">
+      <div style="color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-regular fa-calendar-check" style="color: #818cf8;"></i>
+        <span>Vencimiento pago F29 con Boleta Electrónica: <strong>Día 20 del mes siguiente</strong>.</span>
+      </div>
+      <div>
+        <a href="https://homer.sii.cl" target="_blank" class="btn btn-primary" style="font-size: 0.85rem; text-decoration: none;">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> Ingresar a sii.cl para Declarar
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Guía Rápida para el Comerciante -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; font-size: 0.85rem; margin-bottom: 2rem;">
+    <div class="table-card" style="padding: 1rem 1.25rem;">
+      <h4 style="font-weight: 700; color: #818cf8; margin-top: 0; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+        <i class="fa-solid fa-credit-card"></i> Mercado Pago Point
+      </h4>
+      <p style="color: var(--text-muted); margin: 0; line-height: 1.45;">
+        Todas las transacciones procesadas por la máquina Mercado Pago emiten comprobante electrónico con validez de Boleta (Tipo 39). Su IVA Débito (19%) ya está incluido en este reporte automáticamente.
+      </p>
+    </div>
+    <div class="table-card" style="padding: 1rem 1.25rem;">
+      <h4 style="font-weight: 700; color: #10b981; margin-top: 0; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+        <i class="fa-solid fa-file-invoice"></i> ¿Cómo pagar menos IVA legalmente?
+      </h4>
+      <p style="color: var(--text-muted); margin: 0; line-height: 1.45;">
+        Pide siempre <strong>Factura con RUT de tu empresa</strong> a todos tus proveedores (bebidas, cecinas, panadería, abarrotes, luz, arriendo comercial). Cada $100.000 netos te descuentan $19.000 directos de IVA.
+      </p>
+    </div>
+    <div class="table-card" style="padding: 1rem 1.25rem;">
+      <h4 style="font-weight: 700; color: #f59e0b; margin-top: 0; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+        <i class="fa-solid fa-circle-question"></i> ¿Qué es el PPM?
+      </h4>
+      <p style="color: var(--text-muted); margin: 0; line-height: 1.45;">
+        El Pago Provisional Mensual es un ahorro obligatorio anticipado para tu Impuesto de Primera Categoría (Operación Renta F22). En las pymes (Régimen ProPyme) suele ser de solo el 0.25% de la venta neta.
+      </p>
+    </div>
+  </div>
+
+</div>
+
 <!-- Modal de Credenciales SII -->
 <div id="modalCredenciales" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1050; justify-content: center; align-items: center; padding: 1rem;">
   <div style="background: var(--bg-card); width: 100%; max-width: 480px; border-radius: 12px; border: 1px solid var(--border-dark); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); overflow: hidden;">
@@ -402,19 +674,23 @@ function cerrarModalCredenciales() {
   document.getElementById('modalCredenciales').style.display = 'none';
 }
 
-// Cambiar pestaña principal (Cuadratura Diaria vs Compras vs Ventas)
+// Cambiar pestaña principal (Cuadratura Diaria vs Compras vs Ventas vs Impuestos)
 function cambiarVistaPrincipal(vista) {
   vistaPrincipal = vista;
   const btnCuad = document.getElementById('tabNavCuadratura');
   const btnComp = document.getElementById('tabNavCompras');
   const btnVent = document.getElementById('tabNavVentas');
+  const btnImp = document.getElementById('tabNavImpuestos');
 
   const secCuad = document.getElementById('seccionCuadratura');
   const secDocs = document.getElementById('seccionDocumentos');
+  const secImp = document.getElementById('seccionImpuestos');
 
-  [btnCuad, btnComp, btnVent].forEach(b => {
-    b.style.background = 'transparent';
-    b.style.color = 'var(--text-muted)';
+  [btnCuad, btnComp, btnVent, btnImp].forEach(b => {
+    if (b) {
+      b.style.background = 'transparent';
+      b.style.color = 'var(--text-muted)';
+    }
   });
 
   if (vista === 'CUADRATURA') {
@@ -422,12 +698,14 @@ function cambiarVistaPrincipal(vista) {
     btnCuad.style.color = '#fff';
     secCuad.style.display = 'block';
     secDocs.style.display = 'none';
+    secImp.style.display = 'none';
     cargarCuadraturaDiaria();
   } else if (vista === 'COMPRA') {
     btnComp.style.background = 'var(--primary)';
     btnComp.style.color = '#fff';
     secCuad.style.display = 'none';
     secDocs.style.display = 'block';
+    secImp.style.display = 'none';
     document.getElementById('lblTituloTabla').textContent = 'Facturas de Compras Recibidas (Proveedores)';
     document.getElementById('lblKpiIva').textContent = 'IVA Crédito Fiscal';
     document.getElementById('thRutContraparte').textContent = 'RUT Proveedor';
@@ -438,28 +716,55 @@ function cambiarVistaPrincipal(vista) {
     btnVent.style.color = '#fff';
     secCuad.style.display = 'none';
     secDocs.style.display = 'block';
+    secImp.style.display = 'none';
     document.getElementById('lblTituloTabla').textContent = 'Boletas y Facturas Emitidas (Ventas)';
     document.getElementById('lblKpiIva').textContent = 'IVA Débito Fiscal';
     document.getElementById('thRutContraparte').textContent = 'RUT Cliente / Receptor';
     document.getElementById('thRazonContraparte').textContent = 'Razón Social';
     consultarRCV('sii', false, 'VENTA');
+  } else if (vista === 'IMPUESTOS') {
+    btnImp.style.background = 'var(--primary)';
+    btnImp.style.color = '#fff';
+    secCuad.style.display = 'none';
+    secDocs.style.display = 'none';
+    secImp.style.display = 'block';
+    cargarEstimacionImpuestos();
   }
 }
 
 function cambiarPeriodo() {
   if (vistaPrincipal === 'CUADRATURA') {
     cargarCuadraturaDiaria();
+  } else if (vistaPrincipal === 'IMPUESTOS') {
+    cargarEstimacionImpuestos();
   } else {
     consultarRCV('sii', false, vistaPrincipal);
   }
 }
 
-function forzarSincronizacionSII() {
+async function forzarSincronizacionSII() {
+  const btnSync = document.getElementById('btnSyncSii');
+
   if (vistaPrincipal === 'CUADRATURA') {
     // Sincronizar tanto ventas como compras y recalcular
     consultarRCV('sii', true, 'VENTA', () => {
       cargarCuadraturaDiaria();
     });
+  } else if (vistaPrincipal === 'IMPUESTOS') {
+    // Sincronizar Compras y Ventas consecutivamente
+    btnSync.disabled = true;
+    btnSync.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando Compras...';
+    try {
+      await sincronizarOperacionDirecta('COMPRA');
+      btnSync.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando Ventas...';
+      await sincronizarOperacionDirecta('VENTA');
+      await cargarEstimacionImpuestos();
+    } catch(err) {
+      alert('Error en sincronización con SII: ' + err.message);
+    } finally {
+      btnSync.disabled = false;
+      btnSync.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Sincronizar SII en Vivo';
+    }
   } else {
     consultarRCV('sii', true, vistaPrincipal);
   }
@@ -859,6 +1164,167 @@ function exportarCSV() {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+// -------------------------------------------------------------
+// 3. ESTIMADOR DE IMPUESTOS (F29: IVA + PPM)
+// -------------------------------------------------------------
+let tasaPpmSeleccionada = 0.25;
+
+function seleccionarTasaPpm(tasa, btn) {
+  tasaPpmSeleccionada = tasa;
+  document.getElementById('inputTasaPpm').value = tasa;
+  document.querySelectorAll('.btn-tasa-ppm').forEach(b => {
+    b.classList.remove('btn-primary');
+    b.classList.add('btn-secondary');
+  });
+  if (btn) {
+    btn.classList.remove('btn-secondary');
+    btn.classList.add('btn-primary');
+  }
+  cargarEstimacionImpuestos();
+}
+
+function ajustarTasaManual(val) {
+  const num = parseFloat(val);
+  if (!isNaN(num) && num >= 0) {
+    tasaPpmSeleccionada = num;
+    document.querySelectorAll('.btn-tasa-ppm').forEach(b => {
+      b.classList.remove('btn-primary');
+      b.classList.add('btn-secondary');
+    });
+    cargarEstimacionImpuestos();
+  }
+}
+
+async function cargarEstimacionImpuestos() {
+  const mes = document.getElementById('selectMes').value;
+  const anio = document.getElementById('selectAnio').value;
+  const periodo = `${anio}${mes}`;
+  const selMes = document.getElementById('selectMes');
+  const selMesNombre = selMes.options[selMes.selectedIndex].text;
+  
+  document.getElementById('lblPeriodoImpuestosTexto').textContent = `${selMesNombre} ${anio}`;
+
+  try {
+    const res = await fetch('api/rcv_sii.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': window.CSRF_TOKEN },
+      body: JSON.stringify({
+        action: 'estimar_impuestos',
+        periodo: periodo,
+        tasa_ppm: tasaPpmSeleccionada
+      })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      alert('Error al calcular estimación de impuestos: ' + data.error);
+      return;
+    }
+
+    const v = data.ventas || {};
+    const c = data.compras || {};
+    const calc = data.calculo || {};
+
+    const alertaSinDatos = document.getElementById('alertaSinDatosImpuestos');
+    if ((v.cant_documentos || 0) === 0 && (c.cant_documentos || 0) === 0) {
+      alertaSinDatos.style.display = 'flex';
+    } else {
+      alertaSinDatos.style.display = 'none';
+    }
+
+    // Ventas
+    document.getElementById('badgeCantVentasImp').textContent = `${v.cant_documentos || 0} Docs`;
+    document.getElementById('impVentaNeto').textContent = formatoCLP(v.neto);
+    document.getElementById('impIvaDebito').textContent = formatoCLP(v.iva_debito);
+    document.getElementById('impVentaTotal').textContent = formatoCLP(v.total);
+
+    // Compras
+    document.getElementById('badgeCantComprasImp').textContent = `${c.cant_documentos || 0} Facturas`;
+    document.getElementById('impCompraNeto').textContent = formatoCLP(c.neto);
+    document.getElementById('impIvaCredito').textContent = formatoCLP(c.iva_credito);
+    document.getElementById('impCompraTotal').textContent = formatoCLP(c.total);
+
+    // PPM
+    document.getElementById('impPpmEstimado').textContent = formatoCLP(calc.ppm_estimado);
+
+    // Liquidación
+    document.getElementById('liqIvaDebito').textContent = formatoCLP(calc.iva_debito);
+    document.getElementById('liqIvaCredito').textContent = '-' + formatoCLP(calc.iva_credito);
+    document.getElementById('liqPpmSubtotal').textContent = '+' + formatoCLP(calc.ppm_estimado);
+
+    const badgeRes = document.getElementById('badgeResultadoIva');
+    const bannerRem = document.getElementById('bannerRemanenteFavor');
+    const lblSubtotal = document.getElementById('lblLiqIvaSubtotal');
+    const liqIvaSub = document.getElementById('liqIvaSubtotal');
+
+    if (calc.iva_a_pagar > 0) {
+      badgeRes.style.background = 'rgba(239, 68, 68, 0.2)';
+      badgeRes.style.color = '#ef4444';
+      badgeRes.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> IVA a Pagar: ' + formatoCLP(calc.iva_a_pagar);
+      bannerRem.style.display = 'none';
+      lblSubtotal.textContent = '(=) Subtotal IVA a Pagar:';
+      lblSubtotal.style.color = '#ef4444';
+      liqIvaSub.textContent = formatoCLP(calc.iva_a_pagar);
+      liqIvaSub.style.color = '#ef4444';
+    } else if (calc.remanente_a_favor > 0) {
+      badgeRes.style.background = 'rgba(16, 185, 129, 0.2)';
+      badgeRes.style.color = '#10b981';
+      badgeRes.innerHTML = '<i class="fa-solid fa-circle-check"></i> Remanente a Favor: ' + formatoCLP(calc.remanente_a_favor);
+      bannerRem.style.display = 'flex';
+      document.getElementById('lblMontoRemanente').textContent = formatoCLP(calc.remanente_a_favor);
+      lblSubtotal.textContent = '(=) Subtotal IVA a Pagar:';
+      lblSubtotal.style.color = '#10b981';
+      liqIvaSub.textContent = '$0 (Saldo a Favor)';
+      liqIvaSub.style.color = '#10b981';
+    } else {
+      badgeRes.style.background = 'rgba(148, 163, 184, 0.15)';
+      badgeRes.style.color = '#94a3b8';
+      badgeRes.innerHTML = '<i class="fa-solid fa-minus"></i> IVA Neutro: $0';
+      bannerRem.style.display = 'none';
+      lblSubtotal.textContent = '(=) Subtotal IVA a Pagar:';
+      lblSubtotal.style.color = 'var(--text-muted)';
+      liqIvaSub.textContent = '$0';
+      liqIvaSub.style.color = 'var(--text-muted)';
+    }
+
+    document.getElementById('liqTotalF29').textContent = formatoCLP(calc.total_f29_estimado);
+
+  } catch (err) {
+    console.error(err);
+    alert('Error al conectar con la estimación de impuestos: ' + err.message);
+  }
+}
+
+async function sincronizarOperacionDirecta(operacion) {
+  const mes = document.getElementById('selectMes').value;
+  const anio = document.getElementById('selectAnio').value;
+  const periodo = `${anio}${mes}`;
+  const rutUsuario = document.getElementById('modalRutUsuario').value.trim();
+  const claveUsuario = document.getElementById('modalClaveUsuario').value.trim();
+  const rutEmpresa = document.getElementById('modalRutEmpresa').value.trim();
+
+  const res = await fetch('api/rcv_sii.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': window.CSRF_TOKEN },
+    body: JSON.stringify({
+      action: 'consultar',
+      modo: 'sii',
+      forzar_sync: true,
+      periodo: periodo,
+      operacion: operacion,
+      rut_usuario: rutUsuario,
+      clave_usuario: claveUsuario,
+      rut_empresa: rutEmpresa
+    })
+  });
+  const data = await res.json();
+  if (!data.success) {
+    throw new Error(data.error || 'Error al sincronizar ' + operacion);
+  }
+  return data;
+}
+
+function imprimirResumenImpuestos() {
+  window.print();
 }
 
 // Inicialización automática
