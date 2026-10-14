@@ -645,6 +645,8 @@
 </div>
 
 <script>
+window.CSRF_TOKEN = window.CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.content || '<?= csrfToken() ?>';
+
 // Estado de la pantalla
 let vistaPrincipal = 'CUADRATURA'; // 'CUADRATURA', 'COMPRA', 'VENTA'
 let todosLosDocumentos = [];
@@ -1164,6 +1166,8 @@ function exportarCSV() {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+}
+
 // -------------------------------------------------------------
 // 3. ESTIMADOR DE IMPUESTOS (F29: IVA + PPM)
 // -------------------------------------------------------------
