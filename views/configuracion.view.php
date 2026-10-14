@@ -29,6 +29,9 @@
   <button onclick="switchTab('tabHaulmer')" class="btn btn-secondary tab-btn" id="btn-tabHaulmer">
     🧾 Boleta Electrónica (SII / Haulmer)
   </button>
+  <button onclick="switchTab('tabSiiRcv')" class="btn btn-secondary tab-btn" id="btn-tabSiiRcv">
+    🏛️ SII (RCV y Cuadratura)
+  </button>
   <button onclick="switchTab('tabBalanza')" class="btn btn-secondary tab-btn" id="btn-tabBalanza">
     ⚖️ Balanza de Pesaje
   </button>
@@ -315,28 +318,17 @@
         </div>
       </div>
 
-      <!-- Credenciales para Consulta de Compras y Ventas (RCV SII) -->
-      <div style="display: flex; flex-direction: column; gap: 1rem; border: 1px dashed rgba(16, 185, 129, 0.3); padding: 1rem; border-radius: 8px;">
-        <h3 style="font-size: 0.9rem; font-weight: bold; color: #10b981; margin: 0; display: flex; align-items: center; gap: 0.4rem;">
-          <i class="fa-solid fa-file-invoice-dollar"></i> Credenciales de Consulta RCV (Registro Compras y Ventas SII)
-        </h3>
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">
-          Datos utilizados por el módulo <strong>Registro RCV (SII)</strong> para consultar de forma desatendida las facturas de proveedores y ventas en línea.
-        </p>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div>
-            <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">RUT CONSULTOR SII (REPRESENTANTE)</label>
-            <input type="text" name="config[SII_RUT_USUARIO]" value="<?= htmlspecialchars($config['SII_RUT_USUARIO'] ?? '') ?>" class="form-control" placeholder="Ej: 15234567-8">
-          </div>
-          <div>
-            <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">CLAVE TRIBUTARIA SII</label>
-            <input type="password" name="config[SII_CLAVE_USUARIO]" value="<?= htmlspecialchars($config['SII_CLAVE_USUARIO'] ?? '') ?>" class="form-control" placeholder="Clave secreta portal sii.cl">
-          </div>
-        </div>
+      <!-- Referencia a la pestaña dedicada del SII RCV y Cuadratura -->
+      <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); padding: 0.85rem 1rem; border-radius: 8px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem;">
         <div>
-          <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">RUT EMPRESA / CONTRIBUYENTE (A CONSULTAR)</label>
-          <input type="text" name="config[SII_RUT_EMPRESA]" value="<?= htmlspecialchars($config['SII_RUT_EMPRESA'] ?? ($config['MINIMARKET_RUT'] ?? '')) ?>" class="form-control" placeholder="Ej: 76123456-7">
+          <strong style="color: #10b981;"><i class="fa-solid fa-scale-balanced"></i> Cuadratura Fiscal, RCV y Estimador F29:</strong>
+          <div style="color: var(--text-muted); font-size: 0.8rem; margin-top: 2px;">
+            Para activar/desactivar el módulo y configurar las credenciales del SII, utiliza la pestaña dedicada <strong>🏛️ SII (RCV y Cuadratura)</strong>.
+          </div>
         </div>
+        <button type="button" onclick="switchTab('tabSiiRcv')" class="btn btn-secondary" style="font-size: 0.8rem; border-color: rgba(16, 185, 129, 0.4);">
+          Ir a Configuración SII <i class="fa-solid fa-arrow-right" style="margin-left: 4px;"></i>
+        </button>
       </div>
 
       <!-- Mensaje informativo para simulador o ninguno -->
@@ -347,6 +339,132 @@
 
       <button type="submit" class="btn btn-primary" style="padding: 0.85rem; font-weight: bold;">
         <i class="fa-solid fa-floppy-disk"></i> Guardar Configuración DTE
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- PESTAÑA: CONFIGURACIÓN SII (RCV Y CUADRATURA FISCAL) -->
+<div id="tabSiiRcv" class="tab-pane" style="display: none;">
+  <div class="table-card" style="padding: 1.75rem; max-width: 800px;">
+    <form method="POST" action="configuracion.php" style="display: flex; flex-direction: column; gap: 1.25rem;">
+      <?= csrfField() ?>
+      <input type="hidden" name="action" value="save_config">
+
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-dark); padding-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+          <h2 style="font-size: 1.15rem; font-weight: 700; color: #10b981; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-scale-balanced"></i> Integración SII: Cuadratura y Registro RCV
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.2rem; margin-bottom: 0;">
+            Auditoría de boletas (Mercado Pago), compras a proveedores y estimación mensual del Formulario 29.
+          </p>
+        </div>
+        <div>
+          <a href="rcv_sii.php" class="btn btn-secondary" style="font-size: 0.8rem; border-color: rgba(16, 185, 129, 0.4);">
+            <i class="fa-solid fa-arrow-up-right-from-square" style="color: #10b981;"></i> Abrir Módulo RCV
+          </a>
+        </div>
+      </div>
+
+      <!-- Estado de Activación del Módulo -->
+      <div>
+        <label style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 0.35rem;">
+          ESTADO DEL MÓDULO SII EN EL SISTEMA
+        </label>
+        <?php $siiActivo = ($config['SII_RCV_ACTIVO'] ?? 'true') !== 'false'; ?>
+        <select name="config[SII_RCV_ACTIVO]" id="selectSiiRcvActivo" class="form-control" onchange="toggleSiiFields(this.value)">
+          <option value="true" <?= $siiActivo ? 'selected' : '' ?>>✅ Habilitado (Activo en menús, caja y reportes)</option>
+          <option value="false" <?= !$siiActivo ? 'selected' : '' ?>>⛔ Deshabilitado (Ocultar enlaces y botones del sistema)</option>
+        </select>
+        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem;">
+          Si lo desactivas, los enlaces "Registro RCV (SII)" y los botones de cuadratura en el cierre de caja se ocultarán para no interferir con la operación diaria.
+        </p>
+      </div>
+
+      <!-- Contenedor de campos SII (se oculta si se deshabilita) -->
+      <div id="boxCamposSii" style="display: <?= $siiActivo ? 'flex' : 'none' ?>; flex-direction: column; gap: 1.25rem;">
+
+        <!-- Tarjeta de Credenciales -->
+        <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.25); padding: 1.25rem; border-radius: 8px; display: flex; flex-direction: column; gap: 1rem;">
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: #10b981; margin: 0; display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fa-solid fa-key"></i> Credenciales de Acceso Tributario (sii.cl)
+          </h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+            Utilizadas para autenticarse automáticamente con el Servicio de Impuestos Internos y descargar las boletas electrónicas emitidas por Mercado Pago y las facturas de tus proveedores.
+          </p>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+              <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">RUT USUARIO / CONSULTOR *</label>
+              <input type="text" id="cfgSiiRutUsuario" name="config[SII_RUT_USUARIO]" value="<?= htmlspecialchars($config['SII_RUT_USUARIO'] ?? '') ?>" class="form-control" placeholder="Ej: 76711901-1">
+              <small style="color: var(--text-muted); font-size: 0.72rem;">RUT personal o del representante autorizado ante el SII.</small>
+            </div>
+            <div>
+              <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">CLAVE TRIBUTARIA SII *</label>
+              <div style="position: relative;">
+                <input type="password" id="cfgSiiClaveUsuario" name="config[SII_CLAVE_USUARIO]" value="<?= htmlspecialchars($config['SII_CLAVE_USUARIO'] ?? '') ?>" class="form-control" placeholder="Contraseña de sii.cl" style="padding-right: 2.5rem;">
+                <button type="button" onclick="togglePasswordVisibility('cfgSiiClaveUsuario', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px;">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
+              <small style="color: var(--text-muted); font-size: 0.72rem;">Clave secreta del portal sii.cl.</small>
+            </div>
+          </div>
+
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">RUT DE LA EMPRESA / CONTRIBUYENTE *</label>
+            <input type="text" id="cfgSiiRutEmpresa" name="config[SII_RUT_EMPRESA]" value="<?= htmlspecialchars($config['SII_RUT_EMPRESA'] ?? ($config['MINIMARKET_RUT'] ?? '')) ?>" class="form-control" placeholder="Ej: 76.711.901-1">
+            <small style="color: var(--text-muted); font-size: 0.72rem;">RUT de la empresa titular a la cual se le consultarán las compras y ventas.</small>
+          </div>
+
+          <!-- Botón de Prueba en Vivo -->
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.25rem; padding-top: 0.75rem; border-top: 1px solid rgba(16, 185, 129, 0.2);">
+            <div id="feedbackTestSii" style="display: none; font-size: 0.82rem; padding: 0.45rem 0.75rem; border-radius: 6px; flex: 1;"></div>
+            <button type="button" id="btnProbarConexionSii" onclick="probarConexionSii()" class="btn btn-secondary" style="font-size: 0.85rem; border-color: rgba(16, 185, 129, 0.4);">
+              <i class="fa-solid fa-vial" style="color: #10b981;"></i> Probar Conexión con SII
+            </button>
+          </div>
+        </div>
+
+        <!-- Parámetros de Impuestos y Cuadratura -->
+        <h3 style="font-size: 0.95rem; font-weight: 700; color: #818cf8; margin: 0.5rem 0 0 0; border-bottom: 1px solid var(--border-dark); padding-bottom: 0.3rem;">
+          Parámetros del Estimador Tributario (Formulario 29)
+        </h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">TASA DE PPM POR DEFECTO (%)</label>
+            <div style="position: relative;">
+              <input type="number" step="0.01" min="0" max="15" name="config[SII_PPM_TASA]" value="<?= htmlspecialchars($config['SII_PPM_TASA'] ?? '0.25') ?>" class="form-control" style="padding-right: 2.2rem; font-weight: 700;">
+              <span style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-weight: 700;">%</span>
+            </div>
+            <small style="color: var(--text-muted); font-size: 0.72rem;">Régimen ProPyme suele utilizar 0.25% o 0.125% sobre la venta neta.</small>
+          </div>
+
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">MODO DE CONSULTA POR DEFECTO</label>
+            <?php $siiModoDef = $config['SII_MODO_DEFECTO'] ?? 'sii'; ?>
+            <select name="config[SII_MODO_DEFECTO]" class="form-control">
+              <option value="sii" <?= $siiModoDef === 'sii' ? 'selected' : '' ?>>Conexión Real con SII (Recomendado)</option>
+              <option value="demo" <?= $siiModoDef === 'demo' ? 'selected' : '' ?>>Modo Demo (Datos de prueba)</option>
+            </select>
+            <small style="color: var(--text-muted); font-size: 0.72rem;">En modo Real se conecta al API del SII y almacena en base de datos local.</small>
+          </div>
+        </div>
+
+        <!-- Nota informativa sobre Mercado Pago y Cuadratura -->
+        <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; padding: 0.85rem 1rem; font-size: 0.82rem; color: var(--text-muted); line-height: 1.45;">
+          <strong style="color: #818cf8; display: block; margin-bottom: 0.2rem;">
+            <i class="fa-solid fa-circle-info"></i> ¿Cómo se relaciona con Mercado Pago?
+          </strong>
+          Cada cobro realizado por la terminal Mercado Pago (débito, crédito o efectivo) emite una boleta electrónica automática al SII. La pantalla de cuadratura compara los tickets de caja registrados con lo reportado al SII día por día, asegurando que tu dinero físico y digital cuadre al 100%.
+        </div>
+
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="padding: 0.85rem; font-weight: bold; margin-top: 0.5rem;">
+        <i class="fa-solid fa-floppy-disk"></i> Guardar Parámetros SII
       </button>
     </form>
   </div>
@@ -1112,6 +1230,68 @@ function probarConexionGemini() {
         <i class="fa-solid fa-triangle-exclamation"></i> Error al conectar con el servidor local para realizar la prueba.
       </div>
     `;
+  });
+}
+
+function toggleSiiFields(val) {
+  const box = document.getElementById('boxCamposSii');
+  if (box) box.style.display = (val === 'true') ? 'flex' : 'none';
+}
+
+function probarConexionSii() {
+  const rut = document.getElementById('cfgSiiRutUsuario').value.trim();
+  const clave = document.getElementById('cfgSiiClaveUsuario').value.trim();
+  const rutEmpresa = document.getElementById('cfgSiiRutEmpresa').value.trim();
+  const btn = document.getElementById('btnProbarConexionSii');
+  const fb = document.getElementById('feedbackTestSii');
+
+  if (!rut || !clave) {
+    fb.style.display = 'block';
+    fb.style.background = 'rgba(239, 68, 68, 0.15)';
+    fb.style.color = '#ef4444';
+    fb.textContent = 'Por favor ingresa el RUT de usuario y la Clave para probar.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Probando...';
+  fb.style.display = 'block';
+  fb.style.background = 'rgba(148, 163, 184, 0.1)';
+  fb.style.color = '#94a3b8';
+  fb.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Contactando servidores del SII...';
+
+  const csrf = window.CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+  fetch('api/rcv_sii.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+    body: JSON.stringify({
+      action: 'probar_conexion',
+      rut_usuario: rut,
+      clave_usuario: clave,
+      rut_empresa: rutEmpresa
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-vial" style="color: #10b981;"></i> Probar Conexión con SII';
+    if (data.success) {
+      fb.style.background = 'rgba(16, 185, 129, 0.15)';
+      fb.style.color = '#10b981';
+      fb.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + (data.mensaje || '¡Conexión con el SII exitosa!');
+    } else {
+      fb.style.background = 'rgba(239, 68, 68, 0.15)';
+      fb.style.color = '#ef4444';
+      fb.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> ' + (data.error || 'Error al conectar con el SII.');
+    }
+  })
+  .catch(err => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-vial" style="color: #10b981;"></i> Probar Conexión con SII';
+    fb.style.background = 'rgba(239, 68, 68, 0.15)';
+    fb.style.color = '#ef4444';
+    fb.textContent = 'Error de conexión: ' + err.message;
   });
 }
 

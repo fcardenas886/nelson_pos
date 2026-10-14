@@ -1,3 +1,20 @@
+<?php if (empty($siiModuloActivo)): ?>
+  <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); padding: 0.85rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; color: #f59e0b;">
+      <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.4rem;"></i>
+      <div>
+        <strong style="color: #f59e0b; font-size: 0.95rem;">Módulo SII Desactivado en Configuración</strong>
+        <div style="color: var(--text-muted); font-size: 0.82rem; margin-top: 2px;">
+          Actualmente el módulo está deshabilitado. Los accesos rápidos en la barra de navegación y en la caja están ocultos.
+        </div>
+      </div>
+    </div>
+    <a href="configuracion.php" class="btn btn-secondary" style="font-size: 0.85rem; border-color: rgba(245, 158, 11, 0.4);">
+      <i class="fa-solid fa-sliders" style="color: #f59e0b;"></i> Activar en Ajustes
+    </a>
+  </div>
+<?php endif; ?>
+
 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
   <div>
     <h1 style="font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem;">

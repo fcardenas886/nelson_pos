@@ -7,7 +7,7 @@ $pdo = getDB();
 // Cargar credenciales guardadas si existen
 $configRows = $pdo->query("
     SELECT Clave, Valor FROM configuraciones 
-    WHERE Clave IN ('SII_RUT_USUARIO', 'SII_CLAVE_USUARIO', 'SII_RUT_EMPRESA', 'MINIMARKET_RUT', 'MINIMARKET_NOMBRE')
+    WHERE Clave IN ('SII_RUT_USUARIO', 'SII_CLAVE_USUARIO', 'SII_RUT_EMPRESA', 'MINIMARKET_RUT', 'MINIMARKET_NOMBRE', 'SII_RCV_ACTIVO')
 ")->fetchAll();
 
 $siiConfig = [];
@@ -19,6 +19,7 @@ $rutUsuarioGuardado = $siiConfig['SII_RUT_USUARIO'] ?? '';
 $claveGuardada = $siiConfig['SII_CLAVE_USUARIO'] ?? '';
 $rutEmpresaGuardado = $siiConfig['SII_RUT_EMPRESA'] ?? ($siiConfig['MINIMARKET_RUT'] ?? '');
 $nombreEmpresa = $siiConfig['MINIMARKET_NOMBRE'] ?? 'Mi Empresa';
+$siiModuloActivo = ($siiConfig['SII_RCV_ACTIVO'] ?? 'true') !== 'false';
 
 // Período actual por defecto
 $mesActual = (int)date('m');

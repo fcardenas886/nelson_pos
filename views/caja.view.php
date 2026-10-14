@@ -7,11 +7,13 @@
     <h1 style="font-size: 1.5rem; font-weight: 700;">Gestión y Arqueo de Caja</h1>
     <p style="color: var(--text-muted); font-size: 0.9rem;">Apertura, cierre, conteo de dinero por billetes/monedas y registro de gastos/retiros</p>
   </div>
+  <?php if (!empty($siiRcvActivoGlobal)): ?>
   <div>
     <a href="rcv_sii.php" class="btn btn-secondary" style="font-size: 0.85rem; border-color: rgba(16, 185, 129, 0.4);">
       <i class="fa-solid fa-scale-balanced" style="color: #10b981;"></i> Cuadratura Fiscal SII (RCV)
     </a>
   </div>
+  <?php endif; ?>
 </div>
 
 <!-- Mensajes del Sistema -->
@@ -103,9 +105,11 @@
     <?php endif; ?>
     <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
       <button onclick="location.href='caja.php'" class="btn btn-secondary">Aceptar y Continuar</button>
+      <?php if (!empty($siiRcvActivoGlobal)): ?>
       <a href="rcv_sii.php" class="btn btn-primary" style="background: #10b981; border-color: #10b981;">
         <i class="fa-solid fa-scale-balanced"></i> Auditar Cuadratura Fiscal con SII
       </a>
+      <?php endif; ?>
     </div>
   </div>
 <?php endif; ?>

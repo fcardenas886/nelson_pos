@@ -5,9 +5,9 @@ $user = currentUser();
 $currentPage = basename($_SERVER['PHP_SELF']);
 $esSupervisorNav = in_array($user['rol'], ['Administrador', 'Supervisor'], true);
 
-// Cargar personalización visual y estado del asistente IA
+// Cargar personalización visual y estado del asistente IA y SII
 $pdoHeader = getDB();
-$stmtAppCfg = $pdoHeader->query("SELECT Clave, Valor FROM configuraciones WHERE Clave IN ('TEMA_MODO', 'TEMA_COLOR_ACENTO', 'MINIMARKET_LOGO_URL', 'MINIMARKET_NOMBRE', 'ASISTENTE_IA_ACTIVO')");
+$stmtAppCfg = $pdoHeader->query("SELECT Clave, Valor FROM configuraciones WHERE Clave IN ('TEMA_MODO', 'TEMA_COLOR_ACENTO', 'MINIMARKET_LOGO_URL', 'MINIMARKET_NOMBRE', 'ASISTENTE_IA_ACTIVO', 'SII_RCV_ACTIVO')");
 $appCfg = [];
 while ($r = $stmtAppCfg->fetch(PDO::FETCH_ASSOC)) {
     $appCfg[$r['Clave']] = $r['Valor'];
@@ -17,6 +17,7 @@ $temaAcento = $appCfg['TEMA_COLOR_ACENTO'] ?? 'indigo';
 $logoUrl = $appCfg['MINIMARKET_LOGO_URL'] ?? '';
 $nombreEmpresa = $appCfg['MINIMARKET_NOMBRE'] ?? 'Minimarket POS';
 $iaActivoGlobal = ($appCfg['ASISTENTE_IA_ACTIVO'] ?? 'true') !== 'false';
+$siiRcvActivoGlobal = ($appCfg['SII_RCV_ACTIVO'] ?? 'true') !== 'false';
 ?>
 <!DOCTYPE html>
 <html lang="es" data-theme="<?= htmlspecialchars($temaModo) ?>" data-accent="<?= htmlspecialchars($temaAcento) ?>">
@@ -178,7 +179,7 @@ $changelogActual = APP_CHANGELOG[APP_VERSION] ?? [];
         <li><a href="ventas.php" class="dropdown-item"><i class="fa-solid fa-receipt"></i> Ventas y Comprobantes</a></li>
         <li><a href="devoluciones.php" class="dropdown-item"><i class="fa-solid fa-rotate-left"></i> Devoluciones y Vales</a></li>
         <li><a href="cotizaciones.php" class="dropdown-item"><i class="fa-solid fa-file-lines"></i> Cotizaciones</a></li>
-        <?php if ($esSupervisorNav): ?>
+        <?php if ($esSupervisorNav && $siiRcvActivoGlobal): ?>
         <li><a href="rcv_sii.php" class="dropdown-item"><i class="fa-solid fa-file-invoice-dollar" style="color: #10b981;"></i> Registro RCV (SII)</a></li>
         <?php endif; ?>
       </ul>
@@ -230,7 +231,9 @@ $changelogActual = APP_CHANGELOG[APP_VERSION] ?? [];
         <li><a href="notaspedido.php" class="dropdown-item"><i class="fa-solid fa-file-signature"></i> Notas de Pedido</a></li>
         <li><a href="compras.php" class="dropdown-item"><i class="fa-solid fa-truck-arrow-right"></i> Recepción de Compras</a></li>
         <li><a href="proveedores.php" class="dropdown-item"><i class="fa-solid fa-truck"></i> Proveedores</a></li>
+        <?php if ($siiRcvActivoGlobal): ?>
         <li><a href="rcv_sii.php" class="dropdown-item"><i class="fa-solid fa-file-invoice-dollar" style="color: #10b981;"></i> Registro RCV (SII)</a></li>
+        <?php endif; ?>
         <?php endif; ?>
       </ul>
     </li>

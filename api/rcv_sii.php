@@ -42,6 +42,40 @@ try {
     }
 
     // -------------------------------------------------------------
+    // Probar conexión en vivo con el SII
+    // -------------------------------------------------------------
+    if ($action === 'probar_conexion') {
+        $rutUsuario = trim($input['rut_usuario'] ?? '');
+        $claveUsuario = trim($input['clave_usuario'] ?? '');
+        $rutEmpresa = trim($input['rut_empresa'] ?? '');
+
+        if (empty($rutUsuario) || empty($claveUsuario)) {
+            $configs = $pdo->query("SELECT Clave, Valor FROM configuraciones WHERE Clave IN ('SII_RUT_USUARIO', 'SII_CLAVE_USUARIO', 'SII_RUT_EMPRESA')")->fetchAll(PDO::FETCH_KEY_PAIR);
+            if (empty($rutUsuario)) $rutUsuario = $configs['SII_RUT_USUARIO'] ?? '';
+            if (empty($claveUsuario)) $claveUsuario = $configs['SII_CLAVE_USUARIO'] ?? '';
+            if (empty($rutEmpresa)) $rutEmpresa = $configs['SII_RUT_EMPRESA'] ?? '';
+        }
+
+        if (empty($rutUsuario) || empty($claveUsuario)) {
+            echo json_encode(['success' => false, 'error' => 'Por favor ingresa el RUT del consultor y la Clave Tributaria para probar.']);
+            exit;
+        }
+
+        $client = new SiiRcvClient();
+        if (!$client->login($rutUsuario, $claveUsuario)) {
+            echo json_encode(['success' => false, 'error' => $client->getLastError() ?: 'Fallo de autenticación con el SII. Verifica tu RUT y Clave.']);
+            exit;
+        }
+
+        echo json_encode([
+            'success' => true,
+            'mensaje' => '¡Conexión exitosa con el SII! Autenticación verificada con token oficial.',
+            'token_preview' => substr($client->getToken(), 0, 8) . '...'
+        ]);
+        exit;
+    }
+
+    // -------------------------------------------------------------
     // Consultar Compras o Ventas (Cache-First + Sincronización SII)
     // -------------------------------------------------------------
     if ($action === 'consultar') {
