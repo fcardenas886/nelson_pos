@@ -1255,6 +1255,9 @@
         <button type="button" onclick="toggleTodasCategoriasUtil(false)" class="btn btn-secondary" style="padding: 0.4rem 0.75rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.35rem;" title="Colapsar todas las categorías">
           <i class="fa-solid fa-angles-up"></i> Colapsar
         </button>
+        <button type="button" onclick="sincronizarCostosVentas(this)" class="btn btn-secondary" style="padding: 0.4rem 0.75rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.35rem; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" title="Sincronizar ventas históricas con costo $0 al costo actual del catálogo">
+          <i class="fa-solid fa-arrows-rotate"></i> Sincronizar Costos $0
+        </button>
       </div>
     </div>
 
@@ -1492,6 +1495,40 @@
         fc.style.display = 'none';
       }
     });
+  }
+
+  async function sincronizarCostosVentas(btn) {
+    if (!confirm('¿Deseas sincronizar todas las ventas pasadas que quedaron con costo $0 asignándoles el costo actual del catálogo? Esta acción actualizará los márgenes históricos de forma permanente.')) {
+      return;
+    }
+
+    const origContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+
+    try {
+      const resp = await fetch('api/sincronizar_costos_ventas.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': window.CSRF_TOKEN || ''
+        },
+        body: JSON.stringify({})
+      });
+      const data = await resp.json();
+      if (data.success) {
+        alert(data.mensaje);
+        window.location.reload();
+      } else {
+        alert('Error: ' + (data.error || 'No se pudo sincronizar los costos.'));
+        btn.disabled = false;
+        btn.innerHTML = origContent;
+      }
+    } catch (err) {
+      alert('Error de conexión al sincronizar los costos: ' + err.message);
+      btn.disabled = false;
+      btn.innerHTML = origContent;
+    }
   }
   </script>
 

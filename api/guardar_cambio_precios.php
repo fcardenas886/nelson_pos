@@ -34,6 +34,12 @@ try {
         WHERE CodigoID = :cid AND ProductoID = :pid
     ");
 
+    $stmtSyncVentas = $pdo->prepare("
+        UPDATE detalleventas 
+        SET CostoUnitario = :costo 
+        WHERE ProductoID = :pid AND (CostoUnitario = 0 OR CostoUnitario IS NULL)
+    ");
+
     $totalActualizados = 0;
     $totalPacksActualizados = 0;
 
@@ -59,6 +65,14 @@ try {
             ':pid' => $pid
         ]);
         $totalActualizados++;
+
+        // Propagar costo actualizado a ventas históricas que quedaron con costo $0
+        if ($costoCompra > 0) {
+            $stmtSyncVentas->execute([
+                ':costo' => $costoCompra,
+                ':pid' => $pid
+            ]);
+        }
 
         // Actualizar packs/códigos alternativos vinculados si fueron provistos
         if (!empty($item['packs']) && is_array($item['packs'])) {

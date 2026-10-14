@@ -4,5 +4,5 @@ Thumbs.db
 .DS_Store
 .vscode/
 .idea/
-db/dump_*.sql
 *.sql
+!db/migrations/*.sql

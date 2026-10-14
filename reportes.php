@@ -187,7 +187,7 @@ if ($tab === 'productos') {
             c.Nombre AS Categoria,
             SUM(dv.Cantidad) AS UnidadesVendidas,
             SUM(dv.Subtotal) AS MontoTotalVentas,
-            SUM(dv.Subtotal - (dv.Cantidad * dv.CostoUnitario)) AS UtilidadTotal
+            SUM(dv.Subtotal - (dv.Cantidad * COALESCE(NULLIF(dv.CostoUnitario, 0), p.CostoCompra, 0))) AS UtilidadTotal
         FROM detalleventas dv
         JOIN ventas v ON dv.VentaID = v.VentaID
         JOIN productos p ON dv.ProductoID = p.ProductoID
@@ -406,8 +406,8 @@ if ($tab === 'utilidades') {
             COALESCE(c.Nombre, 'Sin Categoría') AS Categoria,
             SUM(dv.Cantidad) AS CantidadVendida,
             SUM(dv.Subtotal) AS TotalVentas,
-            SUM(dv.Cantidad * dv.CostoUnitario) AS TotalCosto,
-            SUM(dv.Subtotal - (dv.Cantidad * dv.CostoUnitario)) AS UtilidadEstimada
+            SUM(dv.Cantidad * COALESCE(NULLIF(dv.CostoUnitario, 0), p.CostoCompra, 0)) AS TotalCosto,
+            SUM(dv.Subtotal - (dv.Cantidad * COALESCE(NULLIF(dv.CostoUnitario, 0), p.CostoCompra, 0))) AS UtilidadEstimada
         FROM detalleventas dv
         JOIN ventas v ON dv.VentaID = v.VentaID
         JOIN productos p ON dv.ProductoID = p.ProductoID

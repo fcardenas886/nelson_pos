@@ -70,6 +70,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ':plu' => $codigoPLU,
                             ':id' => $id
                         ]);
+
+                        // Propagar costo actualizado a ventas históricas que registraron costo $0
+                        if ($costoCompra > 0) {
+                            $stmtSync = $pdo->prepare("
+                                UPDATE detalleventas 
+                                SET CostoUnitario = :costo 
+                                WHERE ProductoID = :pid AND (CostoUnitario = 0 OR CostoUnitario IS NULL)
+                            ");
+                            $stmtSync->execute([
+                                ':costo' => $costoCompra,
+                                ':pid' => $id
+                            ]);
+                        }
                     } else {
                         $stmt = $pdo->prepare("
                             INSERT INTO productos (CodigoBarras, Nombre, CategoriaID, PrecioVenta, CostoCompra, Stock, StockMinimo, Activo, EsPesable, EsPrecioVariable, CodigoPLU)
