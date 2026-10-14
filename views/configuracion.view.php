@@ -315,6 +315,30 @@
         </div>
       </div>
 
+      <!-- Credenciales para Consulta de Compras y Ventas (RCV SII) -->
+      <div style="display: flex; flex-direction: column; gap: 1rem; border: 1px dashed rgba(16, 185, 129, 0.3); padding: 1rem; border-radius: 8px;">
+        <h3 style="font-size: 0.9rem; font-weight: bold; color: #10b981; margin: 0; display: flex; align-items: center; gap: 0.4rem;">
+          <i class="fa-solid fa-file-invoice-dollar"></i> Credenciales de Consulta RCV (Registro Compras y Ventas SII)
+        </h3>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">
+          Datos utilizados por el módulo <strong>Registro RCV (SII)</strong> para consultar de forma desatendida las facturas de proveedores y ventas en línea.
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">RUT CONSULTOR SII (REPRESENTANTE)</label>
+            <input type="text" name="config[SII_RUT_USUARIO]" value="<?= htmlspecialchars($config['SII_RUT_USUARIO'] ?? '') ?>" class="form-control" placeholder="Ej: 15234567-8">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">CLAVE TRIBUTARIA SII</label>
+            <input type="password" name="config[SII_CLAVE_USUARIO]" value="<?= htmlspecialchars($config['SII_CLAVE_USUARIO'] ?? '') ?>" class="form-control" placeholder="Clave secreta portal sii.cl">
+          </div>
+        </div>
+        <div>
+          <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">RUT EMPRESA / CONTRIBUYENTE (A CONSULTAR)</label>
+          <input type="text" name="config[SII_RUT_EMPRESA]" value="<?= htmlspecialchars($config['SII_RUT_EMPRESA'] ?? ($config['MINIMARKET_RUT'] ?? '')) ?>" class="form-control" placeholder="Ej: 76123456-7">
+        </div>
+      </div>
+
       <!-- Mensaje informativo para simulador o ninguno -->
       <div id="divConfigMsg" style="background: rgba(129, 140, 248, 0.1); border: 1px solid rgba(129, 140, 248, 0.2); padding: 0.85rem 1rem; border-radius: 8px; font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">
         <i class="fa-solid fa-circle-info" style="color: #818cf8; margin-right: 0.4rem;"></i>

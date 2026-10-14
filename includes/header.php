@@ -159,7 +159,7 @@ $changelogActual = APP_CHANGELOG[APP_VERSION] ?? [];
 
     <!-- Grupo: Caja y Ventas -->
     <li class="nav-item has-dropdown">
-      <div class="nav-link <?= in_array($currentPage, ['caja.php', 'ventas.php', 'devoluciones.php', 'cotizaciones.php']) ? 'active' : '' ?>" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
+      <div class="nav-link <?= in_array($currentPage, ['caja.php', 'ventas.php', 'devoluciones.php', 'cotizaciones.php', 'rcv_sii.php']) ? 'active' : '' ?>" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
         <i class="fa-solid fa-cash-register"></i> Caja y Ventas <i class="fa-solid fa-chevron-down nav-caret"></i>
       </div>
       <ul class="dropdown-menu" style="min-width: 230px;">
@@ -178,6 +178,9 @@ $changelogActual = APP_CHANGELOG[APP_VERSION] ?? [];
         <li><a href="ventas.php" class="dropdown-item"><i class="fa-solid fa-receipt"></i> Ventas y Comprobantes</a></li>
         <li><a href="devoluciones.php" class="dropdown-item"><i class="fa-solid fa-rotate-left"></i> Devoluciones y Vales</a></li>
         <li><a href="cotizaciones.php" class="dropdown-item"><i class="fa-solid fa-file-lines"></i> Cotizaciones</a></li>
+        <?php if ($esSupervisorNav): ?>
+        <li><a href="rcv_sii.php" class="dropdown-item"><i class="fa-solid fa-file-invoice-dollar" style="color: #10b981;"></i> Registro RCV (SII)</a></li>
+        <?php endif; ?>
       </ul>
     </li>
 
@@ -202,7 +205,7 @@ $changelogActual = APP_CHANGELOG[APP_VERSION] ?? [];
 
     <!-- Grupo: Stock y Compras -->
     <li class="nav-item has-dropdown">
-      <div class="nav-link <?= in_array($currentPage, ['kardex.php', 'ajustes.php', 'alertas_stock.php', 'inventario.php', 'notaspedido.php', 'compras.php', 'proveedores.php']) ? 'active' : '' ?>" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
+      <div class="nav-link <?= in_array($currentPage, ['kardex.php', 'ajustes.php', 'alertas_stock.php', 'inventario.php', 'notaspedido.php', 'compras.php', 'proveedores.php', 'rcv_sii.php']) ? 'active' : '' ?>" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
         <i class="fa-solid fa-boxes-stacked"></i> Stock y Compras <i class="fa-solid fa-chevron-down nav-caret"></i>
       </div>
       <ul class="dropdown-menu" style="min-width: 250px;">
@@ -227,6 +230,7 @@ $changelogActual = APP_CHANGELOG[APP_VERSION] ?? [];
         <li><a href="notaspedido.php" class="dropdown-item"><i class="fa-solid fa-file-signature"></i> Notas de Pedido</a></li>
         <li><a href="compras.php" class="dropdown-item"><i class="fa-solid fa-truck-arrow-right"></i> Recepción de Compras</a></li>
         <li><a href="proveedores.php" class="dropdown-item"><i class="fa-solid fa-truck"></i> Proveedores</a></li>
+        <li><a href="rcv_sii.php" class="dropdown-item"><i class="fa-solid fa-file-invoice-dollar" style="color: #10b981;"></i> Registro RCV (SII)</a></li>
         <?php endif; ?>
       </ul>
     </li>
