@@ -1,10 +1,16 @@
 <?php
 // Version de la app: unica fuente de verdad, para que login y footer nunca queden desincronizados.
-define('APP_VERSION', 'v4.10.2');
+define('APP_VERSION', 'v4.11.0');
 
 // Novedades reales por versión, para la pantalla de bienvenida y el módulo "Acerca de".
 // Registra la cronología completa de la evolución del sistema desde su inicio.
 define('APP_CHANGELOG', [
+    'v4.11.0' => [
+        'Módulo Integral SII (Registro de Compras y Ventas RCV): Visualización oficial de compras y ventas sincronizadas directamente desde el SII por día y mes.',
+        'Cuadratura Fiscal Diaria con Medios de Pago: Conciliación automática entre las ventas registradas en caja física y los DTEs oficiales informados al SII con detección de diferencias.',
+        'Estimador Preliminar de Impuestos F29: Cálculo aproximado mensual de Débito Fiscal (IVA Ventas), Crédito Fiscal (IVA Compras), retención PPM y saldo neto de IVA a pagar o remanente.',
+        'Gestión y Diagnóstico en Ajustes Generales: Pestaña dedicada en Configuración para activar/desactivar el módulo SII, gestionar credenciales y probar la conexión con el SII en tiempo real.',
+    ],
     'v4.10.2' => [
         'Sincronización Histórica de Costos de Compra: Corrección y recálculo de costos en ventas que registraron costo $0 para reflejar el costo de compra actual del catálogo en informes de utilidades y márgenes comerciales.',
         'Propagación Automática de Costos: Actualización instantánea de ventas pasadas con costo $0 al editar productos en catálogo o mediante el Actualizador Rápido de Precios.',
