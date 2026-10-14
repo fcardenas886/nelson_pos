@@ -147,13 +147,14 @@ try {
     }
 
     // Turno actual del usuario
+    $userId = (int)($user['id'] ?? $user['UsuarioID'] ?? 0);
     $stmtTu = $pdo->prepare("
         SELECT TurnoID, FechaApertura, MontoApertura, Estado 
         FROM turnos 
         WHERE UsuarioID = :uid AND Estado = 'Abierto' 
         ORDER BY TurnoID DESC LIMIT 1
     ");
-    $stmtTu->execute([':uid' => $user['id']]);
+    $stmtTu->execute([':uid' => $userId]);
     $turnoUsuario = $stmtTu->fetch(PDO::FETCH_ASSOC) ?: null;
 
     // Alertas de stock bajo
