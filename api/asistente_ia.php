@@ -27,6 +27,7 @@ $userNombre = $user['nombre'] ?? 'Operador';
 $raw = file_get_contents('php://input');
 $data = json_decode($raw, true) ?? [];
 $mensaje = trim($data['mensaje'] ?? $_POST['mensaje'] ?? $GLOBALS['test_mensaje'] ?? '');
+$historial = is_array($data['historial'] ?? null) ? $data['historial'] : ($GLOBALS['test_historial'] ?? []);
 
 if (empty($mensaje)) {
     echo json_encode(['success' => false, 'error' => 'Mensaje vacío.']);
@@ -175,7 +176,7 @@ $contextoEnVivo = [
 // 3. INTENTO DE RESPUESTA MEDIANTE CLOUD LLM (GEMINI) SI ESTÁ CONFIGURADO
 // --------------------------------------------------------------------
 if (!empty($apiKeyGemini) && (str_starts_with($apiKeyGemini, 'AQ.') || str_starts_with($apiKeyGemini, 'AIza')) && strlen($apiKeyGemini) >= 30) {
-    $respuestaGemini = consultarGemini($mensaje, $apiKeyGemini, $userRol, $userNombre, $contextoEnVivo);
+    $respuestaGemini = consultarGemini($mensaje, $apiKeyGemini, $userRol, $userNombre, $contextoEnVivo, $historial);
     if ($respuestaGemini !== null) {
         echo json_encode([
             'success' => true,
@@ -335,8 +336,17 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "• **En Turnos y Arqueo:** Si solo deseas revisar lo acumulado en tu turno actual en esta caja registradora.";
     }
 
-    // 2.1 Abrir Caja y Turnos
-    if ((preg_match('/(abr|apertur|inici)/u', $q) && (str_contains($q, 'caja') || str_contains($q, 'turno') || str_contains($q, 'dia') || str_contains($q, 'día'))) || str_contains($q, 'fondo fijo') || str_contains($q, 'abrir caja')) {
+    // 2.1 Apertura de Gaveta de Dinero sin venta
+    if (preg_match('/(gaveta|caj[oó]n)/ui', $q) && !str_contains($q, 'cerrar') && !str_contains($q, 'arqueo')) {
+        return "💵 **Apertura de Gaveta de Dinero:**\n\n"
+            . "La gaveta se abre automáticamente al cobrar en efectivo.\n\n"
+            . "**Para abrirla manualmente sin hacer una venta (ej. dar cambio):**\n"
+            . "Presiona el atajo de teclado <kbd>Ctrl + F10</kbd> en la pantalla de Caja POS.\n"
+            . "*(Requiere que la impresora térmica esté conectada en Configuración → Impresora).*";
+    }
+
+    // 2.2 Abrir Caja y Turnos
+    if ((preg_match('/(abr|apertur|inici)/ui', $q) && (str_contains($q, 'caja') || str_contains($q, 'turno') || str_contains($q, 'dia') || str_contains($q, 'día'))) || str_contains($q, 'fondo fijo') || str_contains($q, 'abrir caja')) {
         return "🟢 **¿Cómo abrir tu turno de caja registradora?**\n\n"
             . "1. Ve al menú superior y selecciona **Turnos / Arqueo** (`caja.php`).\n"
             . "2. Si hay más de una caja física configurada, selecciona tu **Caja Asignada**.\n"
@@ -345,7 +355,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "🚀 **Listo:** El sistema te redirigirá automáticamente a la pantalla de **Caja POS**, listo para escanear y vender.";
     }
 
-    // 2.2 Cierre Z Fiscal y Reportes Z
+    // 2.3 Cierre Z Fiscal y Reportes Z
     if (str_contains($q, 'cierre z') || str_contains($q, 'reporte z') || str_contains($q, 'reportes z') || str_contains($q, 'historial z')) {
         return "🧾 **¿Dónde ver y cómo funciona el Cierre Z Fiscal?**\n\n"
             . "El Cierre Z consolida las ventas y recaudación por caja con correlativo oficial:\n\n"
@@ -358,8 +368,8 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "   * Asegúrate de mantener marcada la casilla **'Generar Cierre Z de esta caja también'** antes de presionar *Cerrar Turno y Caja*.";
     }
 
-    // 2.3 Cerrar Caja y Arqueo Ciego
-    if ((preg_match('/(cerr|cierr|arque|cuadr)/u', $q) && (str_contains($q, 'caja') || str_contains($q, 'turno'))) || str_contains($q, 'sobrante') || str_contains($q, 'faltante') || str_contains($q, 'arqueo ciego')) {
+    // 2.4 Cerrar Caja y Arqueo Ciego
+    if ((preg_match('/(cerr|cierr|arque|cuadr)/ui', $q) && (str_contains($q, 'caja') || str_contains($q, 'turno'))) || str_contains($q, 'sobrante') || str_contains($q, 'faltante') || str_contains($q, 'arqueo ciego')) {
         return "🔒 **¿Cómo cerrar tu turno de caja (Arqueo Ciego)?**\n\n"
             . "1. Ve a **Turnos / Arqueo** en el menú superior.\n"
             . "2. El sistema utiliza **Arqueo Ciego** (los montos del sistema están ocultos para asegurar un conteo honesto).\n"
@@ -373,7 +383,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "📊 El sistema generará el informe de cuadratura indicando si hubo diferencia exacta, sobrante o faltante.";
     }
 
-    // 2.3 Retiros e Ingresos de Efectivo en Caja
+    // 2.5 Retiros e Ingresos de Efectivo en Caja
     if (str_contains($q, 'retiro') || str_contains($q, 'ingreso de dinero') || str_contains($q, 'sacar plata') || str_contains($q, 'meter sencillo') || str_contains($q, 'cambio')) {
         return "💵 **Retiros e Ingresos de Efectivo en Caja:**\n\n"
             . "Sirve para justificar movimientos de dinero sin necesidad de realizar una venta:\n\n"
@@ -386,36 +396,60 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "✅ El arqueo de cierre tomará en cuenta este movimiento automáticamente.";
     }
 
-    // 2.4 Multi-Caja (Gestión de Terminales)
-    if (str_contains($q, 'multicaja') || str_contains($q, 'multi-caja') || str_contains($q, 'varias cajas') || str_contains($q, 'caja 1') || str_contains($q, 'caja 2') || str_contains($q, 'crear caja')) {
-        return "🖥️ **Gestión Multi-Caja:**\n\n"
-            . "1. Ve a **Mantenedores → Cajas Registradoras** (`cajas.php`).\n"
-            . "2. Puedes crear nuevas cajas (ej. *'Caja 01 Principal'*, *'Caja 02 Rápida'*).\n"
-            . "3. Al abrir turno, el cajero selecciona en qué caja física está operando.\n"
-            . "4. El navegador recordará automáticamente la caja elegida en ese equipo (`localStorage`).";
+    // 2.6 Devoluciones y Anulación de Ventas
+    if (preg_match('/(anul(ar|o|é|aste|aci[oó]n)?|cancelar\s+venta|devoluci[oó]n|reembolso)/ui', $q)) {
+        return "↩️ **Devoluciones y Anulación de Ventas:**\n\n"
+            . "**Para anular una venta completa:**\n"
+            . "1. Ve al menú superior **Caja y Ventas → Ventas y Comprobantes** (`ventas.php`).\n"
+            . "2. Localiza la boleta, factura o ticket (puedes buscar por folio, fecha o cliente).\n"
+            . "3. Presiona el botón rojo **'Anular'** en la fila de la venta.\n"
+            . "4. Ingresa el motivo de anulación y la **Clave PIN de Supervisor**.\n"
+            . "5. Al confirmar, todo el stock (incluyendo packs) se devuelve automáticamente al inventario y queda registrado en el Kardex.\n\n"
+            . "**Para devolución parcial de artículos:**\n"
+            . "1. Ve a **Caja y Ventas → Devoluciones y Vales** (`devoluciones.php`).\n"
+            . "2. Ingresa el número de comprobante y selecciona solo los artículos devueltos para emitir un vale con saldo a favor o devolver el dinero.";
     }
 
-    // 2.5 Atajos de Teclado del POS
-    if (str_contains($q, 'atajo') || str_contains($q, 'teclado') || str_contains($q, 'teclas') || str_contains($q, 'shortcut') || str_contains($q, 'hotkey')) {
-        return "⌨️ **Atajos de Teclado en Caja POS:**\n\n"
-            . "* <kbd>F12</kbd>: Abrir ventana modal de Cobro inmediato.\n"
-            . "* <kbd>Ctrl + F10</kbd>: Abrir gaveta de dinero sin realizar venta.\n"
-            . "* <kbd>F2</kbd> (o clic en buscador): Enfocar la barra de búsqueda de productos.\n"
-            . "* <kbd>+</kbd> / <kbd>-</kbd>: Aumentar o disminuir la cantidad del artículo seleccionado.\n"
-            . "* <kbd>Supr</kbd> / <kbd>Delete</kbd>: Quitar el producto seleccionado del carrito.\n"
-            . "* <kbd>Esc</kbd>: Cerrar cualquier ventana emergente o modal.";
+    // 2.7 Pausar y Retomar Ventas en el POS
+    if (preg_match('/(paus(ar|o|ada|adita)?|retom(ar|o)?|pendiente|en\s+espera)/ui', $q)) {
+        return "⏸️ **Pausar y Retomar Ventas en el POS:**\n\n"
+            . "1. Si un cliente fue a buscar dinero o un artículo adicional, presiona el botón **'Pausar'** en el carrito.\n"
+            . "2. Escribe una nota de referencia rápida (ej. *'Señora abrigo rojo'*).\n"
+            . "3. El carrito se vaciará de inmediato para atender al siguiente cliente en la fila.\n"
+            . "4. Para recuperarla, presiona el botón **'Pendientes'** arriba en el POS, selecciona la venta y presiona **'Restaurar'**.";
     }
 
-    // 2.6 Diseños y Modos de Pantalla POS (Supermercado / Táctil / Clásico)
-    if (str_contains($q, 'layout') || str_contains($q, 'diseño') || str_contains($q, 'pantalla') || str_contains($q, 'modo tactil') || str_contains($q, 'supermercado') || str_contains($q, 'touch')) {
-        return "🖥️ **Modos de Pantalla y Diseños del POS:**\n\n"
-            . "En la barra superior del POS dispones de 3 modos visuales intercambiables al instante:\n\n"
-            . "1. ⚡ **Modo Supermercado:** Diseñado para escaneo continuo y ultra veloz con pistola de código de barras. Muestra lista compacta vertical y totalizador gigante.\n"
-            . "2. 📱 **Modo Táctil (Touch):** Botones grandes y tarjetas con fotos táctiles pensadas para pantallas touch screen o venta sin lector de barras.\n"
-            . "3. 💻 **Modo Clásico:** Pantalla dividida tradicional con cuadrícula de productos a la izquierda y ticket/carrito a la derecha.";
+    // 2.8 Historial de Ventas, Comprobantes y Reimpresión
+    if (preg_match('/(reimprim[a-z]*|historial\s+(de\s+)?ventas?|buscar\s+(boleta|factura|ticket|venta)|ver\s+(boleta|factura|comprobante|detalle\s+de\s+venta))/ui', $q)) {
+        return "🧾 **Historial de Ventas y Comprobantes (`ventas.php`):**\n\n"
+            . "1. Ve a **Caja y Ventas → Ventas y Comprobantes** en el menú superior.\n"
+            . "2. Por defecto muestra todas las ventas emitidas hoy. Puedes filtrar por rango de fechas o buscar por folio, RUT o cliente.\n"
+            . "3. **Ver Detalle:** Presiona el ícono del **Ojo** para ver la lista de productos y medios de pago utilizados.\n"
+            . "4. **Reimprimir:** Presiona el botón de **Impresora** en la fila para reimprimir el comprobante térmico o ticket.";
     }
 
-    // 2.7 Pago Mixto (Efectivo + Tarjeta + Fiado)
+    // 2.9 Imprimir / Sacar Boleta o Ticket al cobrar
+    if (preg_match('/(imprim[a-z]*|sacar|emitir|dar)\s+(la\s+|el\s+|un\s+|una\s+)?(boleta|ticket|factura|comprobante)/ui', $q)) {
+        return "🖨️ **¿Cómo imprimir boleta o ticket de venta?**\n\n"
+            . "1. En la pantalla de **Caja POS**, al tener los artículos cargados, presiona **COBRAR (<kbd>F12</kbd>)**.\n"
+            . "2. Selecciona el medio de pago (Efectivo, Tarjeta, etc.).\n"
+            . "3. Presiona el botón verde **'CONFIRMAR E IMPRIMIR'**.\n"
+            . "4. La impresora térmica emitirá el comprobante físico de inmediato y abrirá la gaveta si pagaron en efectivo.\n\n"
+            . "💡 *Si necesitas reimprimir un ticket anterior, ve a **Caja y Ventas → Ventas y Comprobantes** y presiona el ícono de impresora en la venta deseada.*";
+    }
+
+    // 2.10 Cobro con Tarjeta / Transbank / Redelcom / Débito / Crédito
+    if (preg_match('/(tarjeta|transbank|redelcom|d[eé]bito|cr[eé]dito\s+bancario|posbank|voucher|v[aá]ucher)/ui', $q) && !str_contains($q, 'fiado')) {
+        return "💳 **¿Cómo cobrar con Tarjeta en Caja POS?**\n\n"
+            . "1. Carga los productos en el carrito del POS y presiona **COBRAR (<kbd>F12</kbd>)**.\n"
+            . "2. En los métodos de pago disponibles, haz clic en la tarjeta **'Tarjeta'** (o Transferencia).\n"
+            . "3. Pasa la tarjeta en tu máquina física POS (Transbank, Redelcom o MercadoPago) por el monto total indicado en pantalla.\n"
+            . "4. Una vez aprobado el pago en tu terminal físico, presiona **'CONFIRMAR E IMPRIMIR'** en el sistema.\n"
+            . "5. El sistema registrará el medio de pago electrónico y no descontará efectivo de la gaveta.\n\n"
+            . "💡 *Si el cliente paga una parte con tarjeta y otra en efectivo, usa la opción **'Pago Mixto'**.*";
+    }
+
+    // 2.11 Pago Mixto (Efectivo + Tarjeta + Fiado)
     if (str_contains($q, 'pago mixto') || str_contains($q, 'tarjeta y efectivo') || str_contains($q, 'efectivo y tarjeta') || str_contains($q, 'dividir pago') || str_contains($q, 'dividir el monto') || str_contains($q, 'parte efectivo') || str_contains($q, 'dos formas de pago') || (str_contains($q, 'mixto') && (str_contains($q, 'pago') || str_contains($q, 'cobr')))) {
         return "🔀 **¿Cómo usar Pago Mixto en el cobro?**\n\n"
             . "1. Al presionar **COBRAR (<kbd>F12</kbd>)**, haz clic en la tarjeta **'Pago Mixto'**.\n"
@@ -429,23 +463,8 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "4. Cuando la suma cubra el total, presiona **Confirmar Venta**.";
     }
 
-    // 2.8 Vender y Métodos de Pago en el POS
-    if (preg_match('/(vend|cobr)/u', $q) && !str_contains($q, 'mixto') && !str_contains($q, 'fiado') && !str_contains($q, 'efectivo y tarjeta') && !str_contains($q, 'tarjeta y efectivo')) {
-        return "🛒 **¿Cómo realizar una venta en Caja POS?**\n\n"
-            . "1. En la pantalla de **Caja POS**, escanea el código de barras o escribe el nombre del producto en el buscador superior y presiona <kbd>Enter</kbd>.\n"
-            . "2. El artículo se agregará al **Carrito de Compra**. Puedes cambiar cantidades con <kbd>+</kbd> o <kbd>-</kbd>.\n"
-            . "3. Presiona el botón verde **'COBRAR VENTA'** o la tecla de acceso directo <kbd>F12</kbd>.\n"
-            . "4. Elige el medio de pago:\n"
-            . "   * 💵 **Efectivo:** Usa los billetes rápidos o escribe lo recibido; calcula el vuelto exacto.\n"
-            . "   * 💳 **Tarjeta / Transferencia:** Registra el pago electrónico.\n"
-            . "   * 🤝 **Fiado (Crédito Interno):** Requiere cliente seleccionado con cupo disponible.\n"
-            . "   * ⭐ **Puntos:** Canjea puntos acumulados del cliente (1 pt = \$1).\n"
-            . "   * 🔀 **Pago Mixto:** Divide el monto combinando varias formas de pago.\n"
-            . "5. Presiona **'CONFIRMAR E IMPRIMIR'** para emitir el comprobante y abrir la gaveta.";
-    }
-
-    // 2.7 Fiado y Crédito a Clientes
-    if (str_contains($q, 'fiado') || str_contains($q, 'credito') || str_contains($q, 'abono') || str_contains($q, 'deuda cliente')) {
+    // 2.12 Fiado y Crédito a Clientes
+    if (str_contains($q, 'fiado') || str_contains($q, 'credito') || str_contains($q, 'crédito') || str_contains($q, 'abono') || str_contains($q, 'deuda cliente') || str_contains($q, 'cartola')) {
         return "🤝 **Gestión de Fiados y Crédito Interno:**\n\n"
             . "**Para vender a Fiado:**\n"
             . "1. En el POS, selecciona al cliente en el recuadro **'Cliente Asignado'**.\n"
@@ -457,7 +476,57 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "3. Ingresa el monto abonado en efectivo o transferencia. El sistema aplica el abono con criterio **FIFO** (pagando las compras más antiguas primero).";
     }
 
-    // 2.8 Puntos y Fidelización
+    // 2.13 Descuentos en Caja y Políticas de Supervisión
+    if (str_contains($q, 'descuento') || str_contains($q, 'rebaja') || str_contains($q, 'clave supervisor') || str_contains($q, 'permiso cajero') || str_contains($q, 'autorización')) {
+        return "🛡️ **Descuentos y Políticas de Supervisión en Caja:**\n\n"
+            . "1. En el POS se pueden aplicar descuentos en porcentaje (%) o monto fijo ($).\n"
+            . "2. En **Configuración → Políticas de Supervisión**, el administrador define:\n"
+            . "   * Si se exige clave de supervisor al vaciar/cancelar un carrito.\n"
+            . "   * Si se exige clave al eliminar un producto agregado.\n"
+            . "   * El **Descuento Máximo permitido** a cajeros sin supervisor (ej. hasta 5%; si supera ese tope, exige clave PIN de supervisor).";
+    }
+
+    // 2.14 Crear / Agregar / Modificar Productos en el Catálogo
+    if (preg_match('/(crear|agregar|nuevo|a[ñn]adir|alta|registrar|modificar|editar)\s+(un\s+)?(producto|art[ií]culo|mercader[ií]a)/ui', $q) || preg_match('/^(nuevo\s+producto|crear\s+producto|cat[aá]logo)/ui', $q)) {
+        return "📦 **¿Cómo crear o agregar un producto al sistema?**\n\n"
+            . "1. Ve al menú superior **Mantenedores → Productos y Precios** (`productos.php`).\n"
+            . "2. Presiona el botón verde **'Nuevo Producto'** en la parte superior derecha.\n"
+            . "3. Completa los datos en la ficha:\n"
+            . "   * **Nombre del Producto:** Descripción visible en boletas y pantallas.\n"
+            . "   * **Código de Barras:** Pistolea el código del envase o presiona el botón **'⚡ Generar EAN-8'** si es de elaboración propia (pan, empanadas, etc.).\n"
+            . "   * **Categoría:** Selecciona la familia a la que pertenece.\n"
+            . "   * **Costo de Compra y Precio de Venta:** El sistema calculará el margen comercial.\n"
+            . "   * **Stock Inicial y Stock Mínimo:** Para las alertas de reposición.\n"
+            . "   * Marca **'Es Pesable'** si se vende por balanza/kilos (puedes generar PLU de 4 dígitos).\n"
+            . "4. Presiona **'Guardar Producto'**.\n\n"
+            . "✅ El artículo quedará disponible de inmediato en la Caja POS para ser escaneado o buscado.";
+    }
+
+    // 2.15 Reportes de Ventas y Estadísticas
+    if (preg_match('/reporte(s)?(\s+de)?\s*(venta|caja|ingreso|medios?\s*de\s*pago)/ui', $q) || str_contains($q, 'centro de reportes')) {
+        return "📊 **Reportes de Ventas y Estadísticas (`reportes.php`):**\n\n"
+            . "1. Ve al menú superior **Reportes → Ventas y Medios de Pago** (`reportes.php?tab=ventas`).\n"
+            . "2. Utiliza los botones de período rápido (**Hoy**, **Ayer**, **Esta Semana**, **Este Mes**) o selecciona un rango personalizado de fechas.\n"
+            . "3. Muestra gráficos de ventas por hora, total recaudado y desglose por cada medio de pago (Efectivo, Tarjetas, Fiado, etc.).\n"
+            . "4. Permite exportar la nómina completa de ventas a formato Excel CSV.";
+    }
+
+    // 2.16 Vender y Cobrar en Caja POS (Flujo general de venta)
+    if (preg_match('/(vender|venta|cobrar|cobro|como\s+vendo|como\s+cobro|realizar\s+venta|hacer\s+venta)/ui', $q)) {
+        return "🛒 **¿Cómo realizar una venta en Caja POS?**\n\n"
+            . "1. En la pantalla de **Caja POS**, escanea el código de barras o escribe el nombre del producto en el buscador superior y presiona <kbd>Enter</kbd>.\n"
+            . "2. El artículo se agregará al **Carrito de Compra**. Puedes cambiar cantidades con <kbd>+</kbd> o <kbd>-</kbd>.\n"
+            . "3. Presiona el botón verde **'COBRAR VENTA'** o la tecla de acceso directo <kbd>F12</kbd>.\n"
+            . "4. Elige el medio de pago:\n"
+            . "   * 💵 **Efectivo:** Usa los billetes rápidos o escribe lo recibido; calcula el vuelto exacto.\n"
+            . "   * 💳 **Tarjeta / Transferencia:** Registra el pago por terminal Transbank o POS.\n"
+            . "   * 🤝 **Fiado (Crédito Interno):** Requiere cliente seleccionado con cupo disponible.\n"
+            . "   * ⭐ **Puntos:** Canjea puntos acumulados del cliente (1 pt = \$1).\n"
+            . "   * 🔀 **Pago Mixto:** Divide el monto combinando varias formas de pago.\n"
+            . "5. Presiona **'CONFIRMAR E IMPRIMIR'** para emitir el comprobante y abrir la gaveta.";
+    }
+
+    // 2.17 Puntos y Fidelización
     if (str_contains($q, 'punto') || str_contains($q, 'fideliza') || str_contains($q, 'acumular punto') || str_contains($q, 'canjear punto')) {
         return "⭐ **Sistema de Puntos y Fidelización:**\n\n"
             . "1. **Acumulación:** Cada venta asociada a un cliente acumula automáticamente **1 punto por cada \$1.000** de compra.\n"
@@ -465,7 +534,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "3. **Canje en Caja:** En el POS, al asignar al cliente e ir a cobrar (<kbd>F12</kbd>), aparecerá la opción de Puntos. El cliente puede canjear todos sus puntos o parte de ellos en Pago Mixto.";
     }
 
-    // 2.9 Balanza y Pesables (PLU)
+    // 2.18 Balanza y Pesables (PLU)
     if (str_contains($q, 'pesable') || str_contains($q, 'balanza') || str_contains($q, 'plu') || str_contains($q, 'kilos') || str_contains($q, 'pesar')) {
         return "⚖️ **Productos Pesables y Balanza:**\n\n"
             . "**En Catálogo (Creación):**\n"
@@ -476,7 +545,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "2. **Balanza sin Etiqueta:** Al digitar el PLU o elegir el producto, se abrirá una ventana para ingresar los **kilos** (calcula el monto) o ingresar el **monto en pesos** (calcula los kilos equivalentes).";
     }
 
-    // 2.10 Impresión de Códigos en Hoja A4
+    // 2.19 Impresión de Códigos en Hoja A4
     if (str_contains($q, 'a4') || str_contains($q, 'hoja normal') || str_contains($q, 'pliego') || str_contains($q, 'carta de mostrador') || str_contains($q, 'imprimir codigos a4') || str_contains($q, 'imprimir códigos a4')) {
         return "🖨️ **Impresión de Códigos de Barra en Hoja A4 (`imprimir_codigos_a4.php`):**\n\n"
             . "Módulo especializado para imprimir en hojas estándar de oficina A4:\n\n"
@@ -493,7 +562,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "4. Presiona **'IMPRIMIR HOJA A4'** o <kbd>Ctrl + P</kbd>.";
     }
 
-    // 2.11 Impresión de Etiquetas Individuales (Térmica 50x30mm)
+    // 2.20 Impresión de Etiquetas Individuales (Térmica 50x30mm)
     if (str_contains($q, 'etiqueta individual') || str_contains($q, 'rollo') || str_contains($q, '50x30') || (str_contains($q, 'imprimir') && str_contains($q, 'etiqueta') && !str_contains($q, 'a4'))) {
         return "🏷️ **Impresión de Etiquetas Individuales (Impresora Térmica):**\n\n"
             . "1. Ve a **Maestros → Productos y Precios** (`productos.php`).\n"
@@ -503,7 +572,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "💡 *Si lo que necesitas es imprimir varios códigos en una hoja de papel normal de oficina, usa el botón 'Pliego A4' o 'Imprimir Códigos A4'.*";
     }
 
-    // 2.12 Códigos EAN-8 Automáticos
+    // 2.21 Códigos EAN-8 Automáticos
     if (str_contains($q, 'ean') || str_contains($q, 'generar ean') || str_contains($q, 'codigo de barra propio') || str_contains($q, 'codigo interno')) {
         return "⚡ **Generación de Códigos EAN-8 Internos:**\n\n"
             . "1. En **Maestros → Productos y Precios**, al crear o editar un producto sin código comercial de fábrica (pan, empanadas, colaciones, miel, etc.), presiona el botón **'⚡ Generar EAN-8'**.\n"
@@ -511,7 +580,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "3. Guarda el producto. Podrás imprimir sus stickers en la impresora térmica o en pliego A4.";
     }
 
-    // 2.13 Múltiples Códigos de Barra por Producto
+    // 2.22 Múltiples Códigos de Barra por Producto
     if (str_contains($q, 'multiples codigos') || str_contains($q, 'múltiples códigos') || str_contains($q, 'varios codigos') || str_contains($q, 'dos codigos')) {
         return "🔢 **Múltiples Códigos de Barras por Producto:**\n\n"
             . "Permite que un mismo producto pueda ser pistoleado con diferentes códigos (ej. si el fabricante cambió el código de envase):\n\n"
@@ -521,7 +590,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "4. En el POS podrás pistolear cualquiera de los códigos registrados y cargará el mismo producto.";
     }
 
-    // 2.14 Mermas y Pérdidas de Mercadería
+    // 2.23 Mermas y Pérdidas de Mercadería
     if (str_contains($q, 'merma') || str_contains($q, 'pérdida') || str_contains($q, 'vencido') || str_contains($q, 'dañado') || str_contains($q, 'rotura') || str_contains($q, 'consumo interno')) {
         return "🗑️ **¿Cómo registrar Mermas y Pérdidas de Mercadería?**\n\n"
             . "1. Ve a **Inventario → Ajustes de Stock** y presiona **'Nuevo Ajuste de Stock'**.\n"
@@ -536,7 +605,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "📊 **Impacto Contable:** Audita las pérdidas en **Reportes → Mermas y Pérdidas**. En **Reportes → Utilidades** verás cómo se descuenta automáticamente de la ganancia bruta para reflejar la **Utilidad Real Neta**.";
     }
 
-    // 2.15 Kardex de Inventario y Trazabilidad
+    // 2.24 Kardex de Inventario y Trazabilidad
     if (str_contains($q, 'kardex') || str_contains($q, 'stock inicial') || str_contains($q, 'historial producto') || str_contains($q, 'movimiento stock')) {
         return "📜 **¿Cómo usar el Kardex de Inventario?**\n\n"
             . "1. Ve a **Inventario → Kardex de Movimientos** (`kardex.php`).\n"
@@ -546,7 +615,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "5. Permite descargar la cartola completa en Excel CSV.";
     }
 
-    // 2.16 Utilidades y Márgenes Comerciales
+    // 2.25 Utilidades y Márgenes Comerciales
     if (str_contains($q, 'utilidad') || str_contains($q, 'margen') || str_contains($q, 'rentabilidad') || str_contains($q, 'ganancia')) {
         return "📈 **¿Cómo ver Utilidades y Márgenes de Ganancia?**\n\n"
             . "1. Ve a **Reportes → Utilidades y Márgenes** (`reportes.php?tab=utilidades`).\n"
@@ -558,7 +627,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "5. **Utilidad Real Neta:** Deduce automáticamente las pérdidas por merma para mostrar la ganancia limpia.";
     }
 
-    // 2.17 Inventario Valorizado
+    // 2.26 Inventario Valorizado
     if (str_contains($q, 'inventario valorizado') || str_contains($q, 'capital inmovilizado') || str_contains($q, 'valor inventario')) {
         return "📦 **Reporte de Inventario Valorizado:**\n\n"
             . "1. Ve a **Reportes → Inventario Valorizado** (`reportes.php?tab=inventario`).\n"
@@ -567,7 +636,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "4. Permite exportar la nómina completa a Excel CSV.";
     }
 
-    // 2.18 Toma de Inventario Físico
+    // 2.27 Toma de Inventario Físico
     if (str_contains($q, 'toma de inventario') || str_contains($q, 'inventario físico') || str_contains($q, 'conteo físico') || str_contains($q, 'cuadre de stock')) {
         return "📋 **Toma de Inventario Físico:**\n\n"
             . "1. Ve a **Inventario → Toma de Inventario** (`inventario.php`).\n"
@@ -575,7 +644,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "3. Al ingresar el stock contado real, el sistema calcula las diferencias (sobrantes o faltantes) y genera los ajustes correspondientes de forma masiva.";
     }
 
-    // 2.19 Alertas de Stock Mínimo
+    // 2.28 Alertas de Stock Mínimo
     if (str_contains($q, 'alerta stock') || str_contains($q, 'stock mínimo') || str_contains($q, 'stock critico') || str_contains($q, 'agotado')) {
         return "⚠️ **Alertas de Stock Mínimo y Agotados:**\n\n"
             . "1. Ve a **Inventario → Alertas de Stock** (`alertas_stock.php`).\n"
@@ -585,7 +654,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "3. Sirve para confeccionar la lista de pedidos a proveedores antes de que se quiebre el stock.";
     }
 
-    // 2.20 Actualizador Rápido de Precios
+    // 2.29 Actualizador Rápido de Precios
     if (str_contains($q, 'actualizar precio') || str_contains($q, 'cambiar precio masivo') || str_contains($q, 'subir precio')) {
         return "💲 **Actualizador Rápido de Precios:**\n\n"
             . "1. Ve a **Inventario → Actualizar Precios** (`actualizar_precios.php`).\n"
@@ -594,7 +663,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "4. Presiona **Guardar Cambios** para aplicar de inmediato a la caja.";
     }
 
-    // 2.21 Cotizaciones y Notas de Pedido
+    // 2.30 Cotizaciones y Notas de Pedido
     if (str_contains($q, 'cotizaci') || str_contains($q, 'presupuesto') || str_contains($q, 'nota de pedido') || str_contains($q, 'apartar')) {
         return "📄 **Cotizaciones y Notas de Pedido:**\n\n"
             . "1. Ve a **Operaciones → Cotizaciones** (`cotizaciones.php`).\n"
@@ -605,7 +674,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "*(Nota honesta: El sistema no cuenta con botón para enviar por WhatsApp o PDF directo; la consulta se hace en pantalla o se cobra en caja).*";
     }
 
-    // 2.22 Recepción de Compras de Proveedores
+    // 2.31 Recepción de Compras de Proveedores
     if (str_contains($q, 'compra') || str_contains($q, 'recepción') || str_contains($q, 'ingresar mercadería') || str_contains($q, 'factura proveedor')) {
         return "📥 **Recepción de Compras de Mercadería:**\n\n"
             . "El módulo opera en **2 Fases:**\n\n"
@@ -619,7 +688,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "2. Puedes confirmarlos o presionar *'Mantener Precios Actuales'*.";
     }
 
-    // 2.23 Proveedores
+    // 2.32 Proveedores
     if (str_contains($q, 'proveedor') || str_contains($q, 'distribuidor')) {
         return "🏢 **Gestión de Proveedores:**\n\n"
             . "1. Ve a **Maestros → Proveedores** (`proveedores.php`).\n"
@@ -627,7 +696,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "3. Al ingresar compras de mercadería, podrás asociar la factura a su ficha correspondiente.";
     }
 
-    // 2.24 Promociones, Packs y Ofertas
+    // 2.33 Promociones, Packs y Ofertas
     if (str_contains($q, 'promoción') || str_contains($q, 'oferta') || str_contains($q, 'pack') || str_contains($q, 'descuento volumen')) {
         return "🎁 **Ofertas y Promociones Automáticas:**\n\n"
             . "1. Ve a **Maestros → Ofertas y Promociones** (`promociones.php`).\n"
@@ -638,26 +707,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "4. En el **POS**, la oferta se aplicará sola en cuanto el cajero alcance la cantidad requerida en el carrito.";
     }
 
-    // 2.25 Pausar y Retomar Ventas
-    if (str_contains($q, 'pausar') || str_contains($q, 'retomar') || str_contains($q, 'pendiente') || str_contains($q, 'espera')) {
-        return "⏸️ **Pausar y Retomar Ventas en el POS:**\n\n"
-            . "1. Si un cliente fue a buscar dinero o un producto adicional, presiona el botón **'Pausar'** en el carrito.\n"
-            . "2. Escribe una referencia rápida (ej. *'Señora abrigo rojo'*).\n"
-            . "3. El carrito se vaciará para atender al siguiente cliente en la fila.\n"
-            . "4. Para recuperarla, presiona el botón **'Pendientes'** arriba, elige la venta y presiona **'Restaurar'**.";
-    }
-
-    // 2.26 Descuentos en Caja y Políticas de Supervisión
-    if (str_contains($q, 'descuento') || str_contains($q, 'clave supervisor') || str_contains($q, 'permiso cajero') || str_contains($q, 'autorización')) {
-        return "🛡️ **Descuentos y Políticas de Supervisión en Caja:**\n\n"
-            . "1. En el POS se pueden aplicar descuentos en porcentaje o monto.\n"
-            . "2. En **Configuración → Políticas de Supervisión**, el administrador define:\n"
-            . "   * Si se exige clave de supervisor al vaciar/cancelar un carrito.\n"
-            . "   * Si se exige clave al eliminar un producto agregado.\n"
-            . "   * El **Descuento Máximo permitido** a cajeros sin supervisor (ej. hasta 5%; si supera ese tope, exige clave).";
-    }
-
-    // 2.27 Modo Offline del POS
+    // 2.34 Modo Offline del POS
     if (str_contains($q, 'offline') || str_contains($q, 'sin internet') || str_contains($q, 'sin conexión') || str_contains($q, 'se cayó el internet')) {
         return "📶 **Modo Offline del Punto de Venta:**\n\n"
             . "1. Si el local pierde conexión a internet, el POS **continúa operando normalmente** utilizando una base de datos local en el navegador (`IndexedDB`).\n"
@@ -665,35 +715,14 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "3. Al restablecerse la conexión, el sistema sincronizará todas las ventas pendientes de forma automática hacia el servidor sin perder ningún dato.";
     }
 
-    // 2.28 Apertura de Gaveta sin venta
-    if (str_contains($q, 'gaveta') || str_contains($q, 'cajón') || str_contains($q, 'abrir gaveta')) {
-        return "💵 **Apertura de Gaveta de Dinero:**\n\n"
-            . "La gaveta se abre automáticamente al cobrar en efectivo.\n\n"
-            . "**Para abrirla manualmente sin hacer una venta (ej. dar cambio):**\n"
-            . "Presiona el atajo de teclado <kbd>Ctrl + F10</kbd> en la pantalla del POS.\n"
-            . "*(Requiere que la impresora térmica esté conectada en Configuración → Impresora).*";
-    }
-
-    // 2.29 Devoluciones y Anulación de Ventas
-    if (str_contains($q, 'devolución') || str_contains($q, 'anular venta') || str_contains($q, 'reembolso')) {
-        return "↩️ **Devoluciones y Anulaciones:**\n\n"
-            . "**Anulación Total:**\n"
-            . "1. Ve a **Operaciones → Ventas / Anulaciones** (`ventas.php`).\n"
-            . "2. Localiza la venta y presiona **'Anular'** (requiere clave de Supervisor y motivo).\n"
-            . "3. Todo el stock (incluso packs) se devuelve al inventario y se registra en el Kardex.\n\n"
-            . "**Devolución Parcial:**\n"
-            . "1. Ve a **Operaciones → Devoluciones y Vales** (`devoluciones.php`).\n"
-            . "2. Ingresa el N° de ticket y las unidades puntuales devueltas para entregar efectivo o emitir un vale de cambio.";
-    }
-
-    // 2.30 Verificador y Consulta de Precios
+    // 2.35 Verificador y Consulta de Precios
     if (str_contains($q, 'consulta de precio') || str_contains($q, 'verificador de precio') || str_contains($q, 'consultar precio')) {
         return "🔍 **Verificador / Consulta Rápida de Precios:**\n\n"
             . "1. Ve a **Operaciones → Consulta de Precios** (`consulta_precio.php`).\n"
             . "2. Es una pantalla limpia y de alta visibilidad pensada para escanear artículos rápidamente con el lector y mostrar en grande el nombre, precio y stock actual.";
     }
 
-    // 2.31 Boleta Electrónica SII (DTE)
+    // 2.36 Boleta Electrónica SII (DTE)
     if (str_contains($q, 'sii') || str_contains($q, 'boleta electronica') || str_contains($q, 'boleta electrónica') || str_contains($q, 'dte') || str_contains($q, 'openfactura') || str_contains($q, 'haulmer')) {
         return "🏛️ **Boleta Electrónica SII (DTE):**\n\n"
             . "1. Ve a **Configuración → Boleta Electrónica (DTE)**.\n"
@@ -703,7 +732,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "   * **Comprobante Local (Sin SII):** Emite solo el ticket interno del negocio sin enviar datos al SII.";
     }
 
-    // 2.32 Impresora Térmica Directa
+    // 2.37 Impresora Térmica Directa
     if (str_contains($q, 'impresora') || str_contains($q, 'ticketera') || str_contains($q, 'posbank') || str_contains($q, 'web serial') || str_contains($q, 'papel térmico')) {
         return "🖨️ **Configuración de Impresora Térmica:**\n\n"
             . "1. Ve a **Configuración → Impresora** (`configuracion.php`).\n"
@@ -711,7 +740,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "3. Puedes activar la apertura automática de gaveta y el corte automático de papel al confirmar cada venta.";
     }
 
-    // 2.33 Personalización Visual (Tema Oscuro / Claro y Logo)
+    // 2.38 Personalización Visual (Tema Oscuro / Claro y Logo)
     if (str_contains($q, 'logo') || str_contains($q, 'tema oscuro') || str_contains($q, 'tema claro') || str_contains($q, 'color') || str_contains($q, 'apariencia')) {
         return "🎨 **Personalización Visual y Logo:**\n\n"
             . "1. Ve a **Configuración → Apariencia y Marca**.\n"
@@ -720,7 +749,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "4. **Logo de la Empresa:** Sube un archivo PNG/JPG o escribe la URL de tu imagen para que aparezca en el menú superior y comprobantes.";
     }
 
-    // 2.34 Usuarios, Roles y Clave Supervisor
+    // 2.39 Usuarios, Roles y Clave Supervisor
     if (str_contains($q, 'usuario') || str_contains($q, 'crear cajero') || str_contains($q, 'rol') || str_contains($q, 'cambiar clave')) {
         return "👤 **Usuarios y Roles del Sistema:**\n\n"
             . "1. Ve a **Administración → Usuarios y Permisos** (`usuarios.php`).\n"
@@ -730,7 +759,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "   * **Cajero:** Operación del POS y ventas diarias.";
     }
 
-    // 2.35 Categorías de Productos
+    // 2.40 Categorías de Productos
     if (str_contains($q, 'categoría') || str_contains($q, 'categoria') || str_contains($q, 'familias')) {
         return "📁 **Gestión de Categorías (`categorias.php`):**\n\n"
             . "1. Ve a **Mantenedores → Categorías** en el menú superior.\n"
@@ -738,7 +767,7 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "3. Sirve para clasificar los artículos del catálogo, organizar la Carta de Mostrador A4 y filtrar reportes de utilidades.";
     }
 
-    // 2.36 Notas de Pedido a Distribuidores
+    // 2.41 Notas de Pedido a Distribuidores
     if (str_contains($q, 'nota de pedido') || str_contains($q, 'notas de pedido') || str_contains($q, 'pedir mercadería') || str_contains($q, 'pedido a distribuidor')) {
         return "📝 **Notas de Pedido (`notaspedido.php`):**\n\n"
             . "1. Ve a **Stock y Compras → Notas de Pedido**.\n"
@@ -746,54 +775,61 @@ function resolverConocimientoLocal($q, $rol, $nombre, $contextoEnVivo = []) {
             . "3. Permite hacer seguimiento a pedidos pendientes antes de recibir la factura física en el local.";
     }
 
-    // 2.37 Historial de Ventas, Comprobantes y Reimpresión
-    if (str_contains($q, 'reimprimir') || str_contains($q, 'comprobante') || str_contains($q, 'historial de venta') || str_contains($q, 'buscar boleta') || str_contains($q, 'buscar factura')) {
-        return "🧾 **Historial de Ventas y Comprobantes (`ventas.php`):**\n\n"
-            . "1. Ve a **Caja y Ventas → Ventas y Comprobantes**.\n"
-            . "2. Filtra por rango de fechas (por defecto muestra hoy) o busca por folio, RUT o nombre de cliente.\n"
-            . "3. En cada venta puedes presionar el ícono de **Ojo** para ver el detalle de ítems o **Imprimir** para reimprimir el comprobante térmico o ticket.";
+    // 2.42 Atajos de Teclado del POS
+    if (str_contains($q, 'atajo') || str_contains($q, 'teclado') || str_contains($q, 'teclas') || str_contains($q, 'shortcut') || str_contains($q, 'hotkey')) {
+        return "⌨️ **Atajos de Teclado en Caja POS:**\n\n"
+            . "* <kbd>F12</kbd>: Abrir ventana modal de Cobro inmediato.\n"
+            . "* <kbd>Ctrl + F10</kbd>: Abrir gaveta de dinero sin realizar venta.\n"
+            . "* <kbd>F2</kbd> (o clic en buscador): Enfocar la barra de búsqueda de productos.\n"
+            . "* <kbd>+</kbd> / <kbd>-</kbd>: Aumentar o disminuir la cantidad del artículo seleccionado.\n"
+            . "* <kbd>Supr</kbd> / <kbd>Delete</kbd>: Quitar el producto seleccionado del carrito.\n"
+            . "* <kbd>Esc</kbd>: Cerrar cualquier ventana emergente o modal.";
     }
 
-    // 2.38 Centro General de Reportes y Estadísticas
-    if (str_contains($q, 'centro de reportes') || (str_contains($q, 'reporte') && !str_contains($q, 'z') && !str_contains($q, 'utilidad') && !str_contains($q, 'merma') && !str_contains($q, 'inventario'))) {
-        return "📊 **Centro de Reportes (`reportes.php`):**\n\n"
-            . "Accede a estadísticas clave con selector de período (Hoy, Ayer, Esta Semana, Este Mes, Año):\n\n"
-            . "1. 💳 **Ventas y Medios de Pago (`?tab=ventas`):** Totales y gráficos por hora.\n"
-            . "2. 🏆 **Ranking de Productos (`?tab=productos`):** Artículos más vendidos y rotación.\n"
-            . "3. 📦 **Inventario Valorizado (`?tab=inventario`):** Capital a costo y venta.\n"
-            . "4. 🤝 **Cartera y Fiados (`?tab=creditos`):** Saldos pendientes por cobrar.\n"
-            . "5. 🚚 **Compras a Proveedores (`?tab=compras`):** Facturas recibidas.\n"
-            . "6. 👥 **Rendimiento de Cajeros (`?tab=cajeros`):** Productividad de cada usuario.\n"
-            . "7. 💰 **Utilidades y Márgenes (`?tab=utilidades`):** Mark-up sobre costo y ganancia neta.\n"
-            . "8. 🗑️ **Mermas y Pérdidas (`?tab=mermas`):** Auditoría clasificada de bajas.";
+    // 2.43 Diseños y Modos de Pantalla POS (Supermercado / Táctil / Clásico)
+    if (str_contains($q, 'layout') || str_contains($q, 'diseño') || str_contains($q, 'pantalla') || str_contains($q, 'modo tactil') || str_contains($q, 'supermercado') || str_contains($q, 'touch')) {
+        return "🖥️ **Modos de Pantalla y Diseños del POS:**\n\n"
+            . "En la barra superior del POS dispones de 3 modos visuales intercambiables al instante:\n\n"
+            . "1. ⚡ **Modo Supermercado:** Diseñado para escaneo continuo y ultra veloz con pistola de código de barras. Muestra lista compacta vertical y totalizador gigante.\n"
+            . "2. 📱 **Modo Táctil (Touch):** Botones grandes y tarjetas con fotos táctiles pensadas para pantallas touch screen o venta sin lector de barras.\n"
+            . "3. 💻 **Modo Clásico:** Pantalla dividida tradicional con cuadrícula de productos a la izquierda y ticket/carrito a la derecha.";
+    }
+
+    // 2.44 Multi-Caja (Gestión de Terminales)
+    if (str_contains($q, 'multicaja') || str_contains($q, 'multi-caja') || str_contains($q, 'varias cajas') || str_contains($q, 'caja 1') || str_contains($q, 'caja 2') || str_contains($q, 'crear caja')) {
+        return "🖥️ **Gestión Multi-Caja:**\n\n"
+            . "1. Ve a **Mantenedores → Cajas Registradoras** (`cajas.php`).\n"
+            . "2. Puedes crear nuevas cajas (ej. *'Caja 01 Principal'*, *'Caja 02 Rápida'*).\n"
+            . "3. Al abrir turno, el cajero selecciona en qué caja física está operando.\n"
+            . "4. El navegador recordará automáticamente la caja elegida en ese equipo (`localStorage`).";
     }
 
     // ----------------------------------------------------------------
-    // SECCIÓN 3: FALLBACK HONESTO CUANDO NO SE CONOCE O NO EXISTE LA FUNCIÓN
+    // SECCIÓN 3: FALLBACK AMIGABLE Y ORIENTADOR
     // ----------------------------------------------------------------
-    return "❌ **Esta función no está disponible en Minimarket POS o no dispongo de información sobre ella en el manual del sistema.**\n\n"
-        . "📌 El sistema **Minimarket POS v4.9.0** está enfocado exclusivamente en la gestión operativa del punto de venta:\n\n"
-        . "   * 🛒 **Caja y Ventas POS:** Cobros (<kbd>F12</kbd>), pago mixto, fiados con cupo, puntos, balanza PLU, pausar ventas.\n"
-        . "   * 🔒 **Turnos y Arqueo:** Fondo inicial, retiros/ingresos con motivo, arqueo ciego y Cierre Z.\n"
-        . "   * 🖨️ **Impresión en A4:** Pliego de etiquetas, pliego mixto de internos y carta de mostrador.\n"
-        . "   * 📦 **Inventario y Mermas:** Catálogo, códigos EAN-8, toma de inventario, bajas por vencimiento y Kardex.\n"
-        . "   * 📥 **Compras y Proveedores:** Recepción de facturas en 2 fases y actualización de precios.\n"
-        . "   * 👥 **Clientes y Créditos:** Cartola de fiados, abonos FIFO y puntos acumulados.\n"
-        . "   * 📊 **Reportes y Utilidades:** Margen sobre costo, categorías en acordeón y Utilidad Real Neta.\n\n"
-        . "💡 *Si tu consulta se refiere a algún procedimiento operativo de la tienda, por favor pregúntame directamente por el procedimiento (por ejemplo: '¿cómo abrir caja?', '¿cómo registrar una compra?', '¿cómo ingresar una merma?', '¿cómo imprimir pliego A4?').*";
+    return "💡 **¿En qué procedimiento de Minimarket POS te puedo orientar?**\n\n"
+        . "No reconocí con exactitud tu pregunta. En este sistema puedo guiarte paso a paso con cualquiera de estos temas:\n\n"
+        . "• 🛒 **Caja y Ventas:** Cobros con <kbd>F12</kbd>, tarjetas/Transbank, efectivo con vuelto, fiados con cupo, pago mixto, pausar ventas y abrir gaveta (<kbd>Ctrl + F10</kbd>).\n"
+        . "• 🔒 **Turnos y Arqueo:** Fondo de apertura, retiros e ingresos de dinero, arqueo ciego y Cierre Z.\n"
+        . "• 📦 **Productos e Inventario:** Crear productos, códigos EAN-8, balanza PLU, precios, mermas y Kardex.\n"
+        . "• 🧾 **Comprobantes y Anulaciones:** Consultar ventas de hoy, reimprimir tickets y anular boletas.\n"
+        . "• 🖨️ **Impresión:** Etiquetas térmicas 50x30mm y Pliegos en hoja normal A4.\n"
+        . "• 👥 **Clientes y Compras:** Cuenta de fiados con abonos FIFO, recepción de facturas y proveedores.\n"
+        . "• 📊 **Reportes:** Utilidades sobre costo, ranking de ventas e inventario valorizado.\n\n"
+        . "👉 *Escribe tu duda directamente (por ejemplo: '¿cómo anular una boleta?', '¿cómo crear un producto?', '¿cómo cobrar con tarjeta?').*";
 }
 
 /**
  * Consulta a la API de Gemini (utilizando los modelos activos de Google AI)
  * Con guardrails estrictos de honestidad y verificación instantánea de clave.
  */
-function consultarGemini($pregunta, $apiKey, $rol, $nombre, $contextoEnVivo = []) {
+function consultarGemini($pregunta, $apiKey, $rol, $nombre, $contextoEnVivo = [], $historial = []) {
     // Si la clave no tiene el formato estándar de Google AI Studio (AQ. o AIza), no ejecutar peticiones lentas
     if (empty($apiKey) || (!str_starts_with($apiKey, 'AQ.') && !str_starts_with($apiKey, 'AIza')) || strlen($apiKey) < 30) {
         return null;
     }
 
-    $modelos = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.8-flash'];
+    $modelos = ['gemini-3.5-flash', 'gemini-3.8-flash'];
 
     $montoCLP = '$' . number_format($contextoEnVivo['ventas_monto'] ?? 0, 0, ',', '.');
     $cantVentas = (int)($contextoEnVivo['ventas_cant'] ?? 0);
@@ -820,71 +856,68 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre, $contextoEnVivo = []
 
     $systemInstruction = "Eres el Asistente Oficial experto del software 'Minimarket POS Web v4.9.0'. "
         . "Tu ÚNICO propósito es guiar y responder dudas sobre el uso de este sistema POS a cajeros y administradores. "
-        . "REGLA CRÍTICA DE HONESTIDAD ABSOLUTA: Si el usuario te pregunta por cualquier función, botón, menú, módulo o integración que NO esté explícitamente detallada en la lista de módulos de Minimarket POS, o si no sabes con certeza cómo se hace algo, TIENES LA OBLIGACIÓN ESTRICTA de declarar con honestidad: 'Esta función no está disponible en Minimarket POS' o 'No dispongo de información sobre esa función en el sistema'. NUNCA inventes funciones, botones, menús ni atajos que no existan. "
-        . "ESTRUCTURA DE MÓDULOS DEL SISTEMA (LO QUE SÍ TIENE): "
-        . "- Inicio / Panel Principal (index.php): En la pantalla de bienvenida/dashboard, la primera tarjeta arriba a la izquierda muestra 'Ventas del Día' con el monto total acumulado en CLP y la cantidad de transacciones completadas hoy en tiempo real. Es la forma más rápida y directa de consultar cuánto se ha vendido en el día sin entrar a submenús. También muestra el estado del turno y las alertas de stock. "
-        . "- Caja POS (pos.php): Venta rápida con lector o búsqueda, atajos (F12 cobrar, Ctrl+F10 gaveta, F2 buscador, +/- cantidad, Supr eliminar). Cobro en Efectivo, Tarjeta Transbank/POS, Transferencia, Fiado/Crédito interno con cupo, Puntos (1 pt = $1 CLP) y Pago Mixto. Pausar y recuperar ventas en botón 'Pendientes'. Descuentos en caja (porcentaje o monto). Modos de pantalla: Supermercado (rápido escáner), Táctil (touchscreen con tarjetas grandes) y Clásico (dividido catálogo y carrito). Modo Offline en IndexedDB con sincronización automática. "
-        . "- Pesables y Balanza (productos.php, pos.php, configuracion.php): Casilla 'Es Pesable', botón '⚡ Generar PLU' (4 dígitos). Balanza con etiqueta EAN-13 o sin etiqueta con ventana interactiva para ingresar kilos (calcula $) o monto $ (calcula kilos). "
-        . "- Caja y Ventas -> Ventas y Comprobantes (ventas.php): Muestra el historial completo de todas las boletas, facturas y tickets emitidos en el día por defecto, con buscador por folio o cliente, cajero, estado (Completada/Anulada), detalle de productos, método de pago y botón para reimprimir el comprobante. "
-        . "- Caja y Ventas -> Devoluciones y Vales (devoluciones.php): Registro de devoluciones de clientes, emisión de Vales de Devolución con código de barras y saldo a favor, canje o reembolso. "
-        . "- Caja y Ventas -> Cotizaciones (cotizaciones.php): Crear presupuestos/notas de pedido con cliente y productos, ver detalle en pantalla (icono de ojo), anular, y botón 'A la caja' para transferir los productos directo al carrito del POS para cobrar con F12. ATENCIÓN: El sistema NO tiene botón para enviar por WhatsApp, ni enviar por email, ni generar PDF; no inventes esas funciones. "
-        . "- Caja y Ventas -> Turnos y Arqueo (caja.php): Apertura de turno con monto de fondo y selección de caja física; botón 'Retiro / Ingreso' para justificar salidas de efectivo (pagos a proveedores, adelantos); consulta de lo recaudado únicamente en el turno en curso de la caja física actual; cierre de turno mediante Arqueo Ciego honesto (conteo físico de efectivo en billetes/monedas, vouchers y transferencias), clave de supervisor (si es cajero) y casilla marcada por defecto 'Generar Cierre Z de esta caja también' para emitir el Z al finalizar la jornada. "
-        . "- Mantenedores -> Productos y Precios (productos.php): Catálogo, generar código EAN-8 automático (prefijo 2), múltiples códigos por producto, stock mínimo, e imprimir etiquetas individuales (1 por 1 para rollo de stickers térmicos 50x30mm) o enlace a Imprimir Códigos A4. "
-        . "- Mantenedores -> Actualizador Rápido Precios (actualizar_precios.php): Modificación masiva y veloz de precios de venta en cuadrícula con recálculo de margen en vivo. "
-        . "- Mantenedores -> Imprimir Códigos A4 (imprimir_codigos_a4.php): Módulo especializado para imprimir en hoja estándar A4. Modo Pliego de Etiquetas (stickers recortables de 1 producto o pliego mixto con 1 de cada código interno), Modo Carta de Mostrador (catálogo escaneable organizado por categorías para mesón de caja), selector de 2/3/4 columnas, filtro ⭐ 'Solo Internos', selector de zoom y líneas de corte punteadas. "
-        . "- Mantenedores -> Categorías (categorias.php): Creación y administración de familias y categorías de mercadería. "
-        . "- Mantenedores -> Clientes y Créditos (clientes.php): Cupo de fiado, pagos/abonos con algoritmo FIFO, y acumulación/canje de puntos (1 punto = $1). "
-        . "- Mantenedores -> Ofertas (promociones.php): Descuentos por unidad y packs por volumen (ej. 3 por $2.000). "
-        . "- Stock y Compras -> Kardex (kardex.php): Trazabilidad de movimientos con movimiento INICIAL de apertura de catálogo, ventas, compras, ajustes y devoluciones, buscador predictivo, tarjeta resumen con KPIs (Stock Inicial, Entradas +, Salidas -, Saldo Actual =), filtros y Excel. "
-        . "- Stock y Compras -> Ajustes de Stock (ajustes.php): Registro clasificado de bajas/mermas (Vencimiento, Daño/Rotura, Pérdida, Consumo Interno) congelando costo unitario. "
-        . "- Stock y Compras -> Toma de Inventario Físico (inventario.php): Conteo ciego o teórico y ajuste masivo por diferencia. "
-        . "- Stock y Compras -> Alertas de Stock (alertas_stock.php): Lista de productos bajo stock mínimo o agotados con sugerencias de compra. "
-        . "- Stock y Compras -> Notas de Pedido (notaspedido.php): Requerimientos de compras a distribuidores antes de recibir factura. "
-        . "- Stock y Compras -> Recepción de Compras (compras.php): En 2 fases: Fase 1 ingresa stock y costo de factura del proveedor; Fase 2 actualiza precios con recálculo de margen sobre costo. "
-        . "- Stock y Compras -> Proveedores (proveedores.php): Registro y contacto de distribuidores. "
-        . "- Reportes -> Centro de Reportes (reportes.php): Filtros rápidos (Hoy, Ayer, Semana, Mes, Año). Pestañas: 'ventas' (totales, gráficos por hora, medios de pago), 'productos' (ranking más vendidos y rotación), 'inventario' (inventario valorizado a costo y venta, artículos sin costo S/C), 'creditos' (cartera de fiados), 'compras' (volumen de compras), 'cajeros' (rendimiento por cajero), 'utilidades' (margen sobre costo mark-up ((Venta-Costo)/Costo*100), acordeón y Utilidad Real Neta descontando mermas), 'mermas' (auditoría de pérdidas por rotura o vencimiento). "
-        . "- Reportes -> Cierre Z Fiscal (reportes_z.php): Módulo exclusivo para consultar el historial de todos los Cierres Z correlativos (#Z) emitidos, con fecha, supervisor, boletas/facturas, monto neto, IVA (19%) y total recaudado. Botón 'Generar Cierre Z Diario'. "
-        . "- Operaciones -> Consulta de Precios (consulta_precio.php): Verificador de precios para escáner en pantalla limpia. "
-        . "- Administración -> Cajas Registradoras (cajas.php): Habilitación de cajas registradoras físicas (Caja 01, Caja 02). "
-        . "- Administración -> Usuarios y Permisos (usuarios.php): Roles Administrador, Supervisor y Cajero, con clave de supervisor para autorizaciones especiales en caja y cierres de turno. "
-        . "- Configuración (configuracion.php): Logo, datos del local, tema oscuro/claro, boleta SII/DTE (OpenFactura, Haulmer, Mock, Comprobante Local), políticas de supervisión de caja (clave supervisor al cancelar o descontar), impresora térmica directa (POSBANK A11 Prime 80mm) y Asistente de IA. "
-        . "REGLA OBLIGATORIA PARA CONSULTAS SOBRE 'CUÁNTO VENDÍ', 'VENTAS DE HOY' O 'CÓMO SÉ CUÁNTO VENDÍ': "
-        . "1. RESPONDE DE INMEDIATO con la cifra real acumulada del día de forma natural y cercana (ejemplo: 'Hoy llevas vendido \$X en N ventas'). Si lleva \$0, acláralo con amabilidad. "
-        . "2. Explica con naturalidad los lugares del sistema para consultarlo: "
-        . "   * En la pantalla de Inicio: en la tarjeta 'Ventas del Día' arriba a la izquierda lo ves al instante. "
-        . "   * En Caja y Ventas -> Ventas y Comprobantes: para ver el detalle de cada boleta o comprobante emitido hoy. "
-        . "   * En Reportes -> Ventas y Medios de Pago: seleccionando 'Hoy' para ver gráficos y medios de pago. "
-        . "   * En Turnos y Arqueo: si solo deseas ver lo acumulado en tu caja física actual. "
-        . "PROHIBICIÓN ESTRICTA: NO MENCIONES en absoluto las palabras 'Cierre Z', 'fiscal' ni 'arqueo ciego' en respuestas sobre ventas del día. La Z no viene al caso para consultar ventas. No agregues advertencias ni notas innecesarias sobre la Z. "
-        . "FUNCIONES QUE EL SISTEMA NO POSEE (DEBES DECLARAR CON HONESTIDAD QUE NO EXISTEN): "
-        . "1. WhatsApp en cotizaciones o ventas: NO existe botón de envío por WhatsApp ni PDF. Aclara que se consulta en pantalla o se pasa 'A la caja'. "
-        . "2. Pago de sueldos o nóminas: NO existe módulo de nóminas ni recursos humanos. Sugiere registrar 'Retiro de Caja' con motivo. "
-        . "3. Tienda online o delivery: NO cuenta con tienda web, MercadoLibre ni PedidosYa. Sugiere apartar pedidos en Cotizaciones. "
-        . "4. Correos masivos o email marketing: NO existe envío masivo. "
-        . "5. Criptomonedas ni pagos QR externos: Solo efectivo, tarjeta, transferencia, fiado y puntos. "
-        . "6. Facturas de exportación ni comercio exterior: Solo ventas locales y boletas/facturas SII nacionales. "
-        . "7. Préstamos financieros personales: No existe módulo de créditos bancarios. "
-        . "8. Contabilidad general completa de partida doble (Libro Mayor, Balance de 8 columnas, F29): Para fines contables se exportan las ventas y cierres Z al contador. "
-        . "9. Biometría o huella digital: Solo usuario y contraseña. "
-        . "REGLAS CRÍTICAS DE LENGUAJE NATURAL Y HUMANO (OBLIGATORIAS): "
-        . "- Habla de forma natural, cálida, fluida y conversacional, como un colega experto que trabaja en el local junto a $nombre, NUNCA como un manual técnico o un robot. "
-        . "- CERO RIGIDEZ: Evita sonar acartonado o burocrático. Usa expresiones naturales y directas (ej: 'puedes verlo al tiro', 'basta con presionar', 'lo encuentras en', 'con eso queda listo'). "
-        . "- NUNCA menciones nombres de archivos técnicos con extensión '.php' (como 'index.php', 'ventas.php' o 'caja.php') en medio de tus oraciones. Los cajeros y administradores no ven nombres de archivos, ven pantallas y nombres de menús. Habla siempre usando los nombres reales de los menús y botones (ej: 'en la pantalla de Inicio', 'en el menú Caja y Ventas → Ventas y Comprobantes', 'en el Centro de Reportes', 'en Turnos y Arqueo'). "
-        . "- Respuestas al grano y sin rodeos: Si la pregunta es sencilla, no des explicaciones largas ni introducciones innecesarias. "
-        . "- El usuario actual se llama '$nombre' y tiene el rol de '$rol'.";
+        . "El usuario actual se llama '$nombre' y tiene el rol de '$rol'. "
+        . "ESTRUCTURA DE MÓDULOS DEL SISTEMA: "
+        . "- Inicio / Panel Principal (index.php): En la tarjeta 'Ventas del Día' muestra el total en CLP y cantidad de ventas completadas hoy en tiempo real. También muestra estado del turno y alertas de stock bajo. "
+        . "- Caja POS (pos.php): Escaneo o búsqueda de artículos. Cobro con tecla F12 o botón verde COBRAR. Medios de pago: Efectivo (calcula vuelto), Tarjeta / Transferencia (POS Transbank o Redelcom sin comisiones internas), Fiado / Crédito interno con cupo del cliente, Puntos canjeables (1 pt = $1 CLP) y Pago Mixto. Botón 'Pausar' para guardar ventas en espera y botón 'Pendientes' para recuperarlas. Descuentos en caja (monto o %). Atajos: F12 (Cobro), Ctrl+F10 (abrir gaveta sin venta), F2 (buscador), +/- (cantidades), Supr (eliminar ítem). Modos visuales: Supermercado (lector), Táctil (pantallas touch) y Clásico. Modo Offline con IndexedDB y sincronización automática. "
+        . "- Mantenedores -> Productos y Precios (productos.php): Botón verde 'Nuevo Producto' para registrar artículos con nombre, código de barras (o botón '⚡ Generar EAN-8'), categoría, costo de compra, precio de venta, stock inicial y stock mínimo. Múltiples códigos por producto, productos pesables/balanza (PLU de 4 dígitos) e impresión de etiquetas individuales térmicas (50x30mm) o enlace a hoja A4. "
+        . "- Mantenedores -> Actualizador Rápido Precios (actualizar_precios.php): Modificación masiva y veloz de precios en cuadrícula con cálculo de margen en tiempo real. "
+        . "- Mantenedores -> Imprimir Códigos A4 (imprimir_codigos_a4.php): Pliegos de etiquetas recortables en hoja estándar A4 (12, 24, 30, 48 o pliego mixto de internos) y Carta de Mostrador escaneable para mesón de caja. "
+        . "- Mantenedores -> Categorías (categorias.php): Administración de categorías y familias de mercadería. "
+        . "- Mantenedores -> Clientes y Créditos (clientes.php): Cupo de fiado, cartola de deuda, abonos de deuda con criterio FIFO (paga las compras más antiguas primero) y puntos de fidelización. "
+        . "- Mantenedores -> Ofertas y Promociones (promociones.php): Descuentos por unidad y packs por volumen (ej: 3 por $2.000). "
+        . "- Caja y Ventas -> Ventas y Comprobantes (ventas.php): Historial completo de ventas, boletas y facturas emitidas hoy o por rango de fechas, detalle de artículos, filtro por cliente o folio, botón para reimprimir comprobante térmico y botón para anular venta (requiere clave de supervisor y reintegra stock al kardex). "
+        . "- Caja y Ventas -> Devoluciones y Vales (devoluciones.php): Devolución parcial de artículos y emisión de Vales de Devolución con código de barras. "
+        . "- Caja y Ventas -> Cotizaciones (cotizaciones.php): Presupuestos que se pueden revisar en pantalla y transferir directamente 'A la caja' para cobrar en el POS. "
+        . "- Caja y Ventas -> Turnos y Arqueo (caja.php): Apertura de turno con monto de cambio inicial; botón 'Retiro / Ingreso' para salidas o entradas de efectivo justificadas; cierre de turno mediante Arqueo Ciego honesto (conteo de efectivo, vouchers y transferencias sin ver montos previos), clave de supervisor y casilla para emitir Cierre Z al final del día. "
+        . "- Stock y Compras -> Recepción de Compras (compras.php): Ingreso de facturas o guías de distribuidores en 2 fases (Fase 1 ingresa stock y costo; Fase 2 actualiza precios de venta sugiriendo margen comercial). "
+        . "- Stock y Compras -> Kardex (kardex.php): Trazabilidad total de movimientos de stock con registro inicial, entradas por compra, salidas por venta o merma, saldos y exportación a Excel. "
+        . "- Stock y Compras -> Ajustes de Stock (ajustes.php): Bajas por merma clasificada (vencimiento, daño, rotura, consumo interno) congelando costo de compra. "
+        . "- Stock y Compras -> Toma de Inventario (inventario.php): Conteo físico y ajuste masivo por diferencia. "
+        . "- Stock y Compras -> Alertas de Stock (alertas_stock.php): Lista de artículos con stock crítico o agotados. "
+        . "- Stock y Compras -> Notas de Pedido (notaspedido.php) y Proveedores (proveedores.php). "
+        . "- Reportes -> Centro de Reportes (reportes.php): Ventas y medios de pago, productos más vendidos, inventario valorizado, cartera de fiados, compras, rendimiento de cajeros, utilidades comerciales (margen sobre costo mark-up) y mermas. "
+        . "- Reportes -> Cierre Z Fiscal (reportes_z.php): Historial de Cierres Z correlativos con desglose neto, IVA 19% y total acumulado. "
+        . "- Operaciones -> Consulta de Precios (consulta_precio.php): Verificador rápido de precios con lector de barras. "
+        . "- Configuración (configuracion.php): Logo, tema oscuro/claro, boleta SII/DTE, políticas de supervisión de caja (clave supervisor al cancelar o descontar) e impresora térmica directa USB/WebSerial. "
+        . "REGLA OBLIGATORIA SOBRE CONSULTAS DE VENTAS DEL DÍA: Si el usuario pregunta cuánto vendió o cuánto lleva hoy, responde de inmediato con la cifra real acumulada ({$montoCLP} CLP en {$cantVentas} ventas) de forma natural y cercana. Explica dónde verlo (Inicio en tarjeta Ventas del Día, o en Ventas y Comprobantes). "
+        . "FUNCIONES QUE NO POSEE (DECLARAR HONESTAMENTE SI PREGUNTAN POR ELLAS): Envío directo por WhatsApp o PDF desde cotizaciones/ventas (se hace en pantalla o directo a caja), liquidaciones de sueldos/nóminas, tienda online/delivery externo, criptomonedas y pagos QR externos, y contabilidad ERP de partida doble. "
+        . "ESTILO Y TONO: Habla de forma natural, cálida, fluida y cercana como un colega experto en el local. Respuestas directas, claras y bien explicadas. NUNCA menciones nombres de archivos técnicos con extensión .php; usa siempre los nombres de menús y botones visibles en pantalla.";
+
+    // Preparar el array de contents para Gemini (historial previo + pregunta actual)
+    $contents = [];
+    if (!empty($historial) && is_array($historial)) {
+        $histSlice = array_slice($historial, -6);
+        foreach ($histSlice as $h) {
+            $hRol = (($h['rol'] ?? $h['tipo'] ?? '') === 'bot' || ($h['rol'] ?? '') === 'model') ? 'model' : 'user';
+            $hTxt = trim($h['texto'] ?? $h['parts'][0]['text'] ?? '');
+            if (!empty($hTxt)) {
+                if (empty($contents) && $hRol === 'model') {
+                    continue; // Primer mensaje debe ser del usuario
+                }
+                $contents[] = [
+                    'role' => $hRol,
+                    'parts' => [['text' => $hTxt]]
+                ];
+            }
+        }
+    }
+    $contents[] = [
+        'role' => 'user',
+        'parts' => [['text' => $pregunta]]
+    ];
 
     $body = [
-        'contents' => [
-            [
-                'role' => 'user',
-                'parts' => [
-                    ['text' => $systemInstruction . "\n\n" . $liveDataPrompt . "Pregunta del usuario: " . $pregunta]
-                ]
+        'systemInstruction' => [
+            'parts' => [
+                ['text' => $systemInstruction . "\n\n" . $liveDataPrompt]
             ]
         ],
+        'contents' => $contents,
         'generationConfig' => [
-            'temperature' => 0.4,
-            'maxOutputTokens' => 800
+            'temperature' => 0.3,
+            'maxOutputTokens' => 800,
+            'thinkingConfig' => ['thinkingBudget' => 0]
         ]
     ];
     $jsonBody = json_encode($body);
@@ -900,7 +933,7 @@ function consultarGemini($pregunta, $apiKey, $rol, $nombre, $contextoEnVivo = []
             'x-goog-api-key: ' . $apiKey
         ]);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonBody);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 12);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
         $res = curl_exec($ch);

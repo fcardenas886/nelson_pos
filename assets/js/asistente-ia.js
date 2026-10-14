@@ -76,18 +76,28 @@ function enviarMensajeUsuario(texto) {
   const chatBody = document.getElementById('chatIABody');
   if (!chatBody) return;
 
-  // 1. Agregar burbuja de usuario
+  // 1. Obtener historial reciente de la sesión para dar contexto conversacional
+  let historialPrevio = [];
+  try {
+    const rawHist = JSON.parse(sessionStorage.getItem('chat_ia_historial') || '[]');
+    historialPrevio = rawHist.slice(-6).map(m => ({
+      rol: m.tipo === 'bot' ? 'model' : 'user',
+      texto: m.texto
+    }));
+  } catch (e) {}
+
+  // 2. Agregar burbuja de usuario
   agregarBurbujaChat('user', texto);
   guardarEnHistorial('user', texto);
 
-  // 2. Mostrar indicador de escribiendo
+  // 3. Mostrar indicador de escribiendo
   const typingId = mostrarIndicadorEscribiendo();
 
-  // 3. Enviar a la API
+  // 4. Enviar a la API con mensaje e historial
   fetch('api/asistente_ia.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mensaje: texto })
+    body: JSON.stringify({ mensaje: texto, historial: historialPrevio })
   })
     .then(res => res.json())
     .then(data => {
