@@ -592,6 +592,7 @@
 </div>
 
 <!-- Modal de Ticket / Comprobante -->
+<style>@media print { @page { size: 80mm auto; margin: 3mm; } }</style>
 <div id="ticketModal" class="ticket-overlay" style="display: none;" onclick="if (event.target === this) cerrarTicket()">
   <div class="ticket-modal__card">
     <button type="button" class="ticket-modal__close-btn no-print" onclick="cerrarTicket()" title="Cerrar comprobante (Esc)">

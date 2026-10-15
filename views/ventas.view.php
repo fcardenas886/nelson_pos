@@ -740,6 +740,7 @@
 <!-- ==========================================================================
      MODAL DE REIMPRESIÓN TÉRMICA (80mm) (#ticketModal)
      ========================================================================== -->
+<style>@media print { @page { size: 80mm auto; margin: 3mm; } }</style>
 <div id="ticketModal" class="ticket-overlay" style="display: none;" onclick="if (event.target === this) cerrarTicket()">
   <div class="ticket-modal__card">
     <button type="button" class="ticket-modal__close-btn no-print" onclick="cerrarTicket()" title="Cerrar comprobante (Esc)">
@@ -1167,6 +1168,7 @@ async function reimprimirTicketVenta(id) {
     }
 
     document.getElementById('ticketModal').style.display = 'flex';
+    document.body.classList.add('ticket-modal-open');
 
   } catch (err) {
     alert('Error al generar ticket: ' + err.message);
@@ -1174,6 +1176,7 @@ async function reimprimirTicketVenta(id) {
 }
 
 function cerrarTicket() {
+  document.body.classList.remove('ticket-modal-open');
   document.getElementById('ticketModal').style.display = 'none';
 }
 

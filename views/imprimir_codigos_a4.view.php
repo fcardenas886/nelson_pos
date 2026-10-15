@@ -633,55 +633,182 @@
 }
 
 /* ============================================================== */
-/* ESTILOS EXACTOS PARA IMPRESIÓN (CTRL + P)                      */
+/* ESTILOS EXACTOS PARA IMPRESIÓN (CTRL + P / BOTÓN IMPRIMIR)     */
 /* ============================================================== */
 @media print {
   @page {
-    size: A4 portrait;
-    margin: 6mm 5mm;
+    size: A4 portrait !important;
+    margin: 6mm 5mm !important;
   }
 
-  body {
+  :root {
+    --a4-zoom: 1 !important;
+  }
+
+  html, body {
     background: #ffffff !important;
     color: #000000 !important;
     margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
 
-  /* Ocultar toda la interfaz del POS (header, footer, sidebar) */
-  nav.navbar, footer, #a4Sidebar, .a4-preview-toolbar, #btnToggleAsistenteIA, #ventanaChatIA {
+  main.container {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* REGLA CRÍTICA: Forzar visibilidad absoluta de todo el contenido A4 anulando cualquier regla externa */
+  .a4-page-container,
+  .a4-page-container *,
+  .a4-preview-viewport,
+  .a4-preview-viewport *,
+  .a4-sheet,
+  .a4-sheet *,
+  .a4-grid,
+  .a4-grid *,
+  .a4-etiqueta-card,
+  .a4-etiqueta-card *,
+  .a4-catalogo-header,
+  .a4-catalogo-header *,
+  .a4-card-barcode-wrap,
+  .a4-card-barcode-wrap *,
+  svg,
+  svg * {
+    visibility: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Ocultar toda la interfaz del sistema (header, footer, sidebar, herramientas de zoom) */
+  nav.navbar, 
+  footer, 
+  #a4Sidebar, 
+  .a4-sidebar, 
+  .a4-preview-toolbar, 
+  .a4-zoom-toolbar,
+  #btnToggleAsistenteIA, 
+  #ventanaChatIA,
+  #updateOverlay,
+  .toast,
+  .no-print {
     display: none !important;
     visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
   }
 
   .a4-page-container {
     display: block !important;
     background: #ffffff !important;
     min-height: 0 !important;
+    height: auto !important;
     padding: 0 !important;
     margin: 0 !important;
+    position: static !important;
+    overflow: visible !important;
+    width: 100% !important;
   }
 
   .a4-preview-viewport {
     padding: 0 !important;
     margin: 0 !important;
     display: block !important;
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
   }
 
   .a4-sheet {
     width: 100% !important;
+    max-width: 100% !important;
     min-height: 0 !important;
+    height: auto !important;
     zoom: 1 !important;
     transform: none !important;
+    transition: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
+    border: none !important;
     padding: 0 !important;
     margin: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+    position: static !important;
   }
+
+  .a4-grid {
+    display: grid !important;
+    width: 100% !important;
+    gap: 2mm !important;
+    box-sizing: border-box !important;
+  }
+
+  .a4-grid.cols-2 { grid-template-columns: repeat(2, 1fr) !important; }
+  .a4-grid.cols-3 { grid-template-columns: repeat(3, 1fr) !important; }
+  .a4-grid.cols-4 { grid-template-columns: repeat(4, 1fr) !important; }
 
   .a4-etiqueta-card {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-sizing: border-box !important;
+    min-height: 31mm !important;
+    border: 1px dashed #64748b !important;
+  }
+
+  .a4-etiqueta-card.sin-borde {
+    border: 1px solid transparent !important;
+  }
+
+  .a4-card-empresa {
+    font-size: 6.5pt !important;
+    color: #334155 !important;
+  }
+
+  .a4-card-nombre {
+    font-size: 8pt !important;
+    color: #000000 !important;
+  }
+
+  .a4-card-precio {
+    font-size: 11pt !important;
+    color: #000000 !important;
+  }
+
+  .a4-card-barcode-wrap {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin: 1mm 0 !important;
+  }
+
+  .a4-card-barcode-wrap svg {
+    display: block !important;
+    max-width: 96% !important;
+    height: auto !important;
+  }
+
+  .a4-catalogo-header {
+    border-bottom: 2px solid #000000 !important;
+    margin-bottom: 4mm !important;
+    padding-bottom: 3mm !important;
+    display: flex !important;
   }
 }
 </style>

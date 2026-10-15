@@ -2132,6 +2132,7 @@ function mostrarTicket(data, items, total, pagado, vuelto, pagos, meta) {
   const modal = document.getElementById('ticketModal');
   if (modal) {
     modal.style.display = 'flex';
+    document.body.classList.add('ticket-modal-open');
     // Dar foco rápido al botón de cerrar para permitir cerrar con Espacio/Enter de inmediato
     setTimeout(() => {
       const btnCerrar = document.getElementById('btnCerrarTicket');
@@ -2197,6 +2198,7 @@ function imprimirPdfDirecto(pdfUrl) {
 }
 
 function cerrarTicket() {
+  document.body.classList.remove('ticket-modal-open');
   const modal = document.getElementById('ticketModal');
   if (modal) {
     modal.style.display = 'none';
