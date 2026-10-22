@@ -8,6 +8,8 @@
  * stock oficial en productos y registra los pagos y el Kardex correspondiente.
  */
 
+ob_start();
+
 if (!headers_sent()) {
     header('Content-Type: application/json; charset=utf-8');
 }
@@ -16,6 +18,7 @@ require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/precios_helper.php';
 
 if (empty($_SESSION['usuario'])) {
+    if (ob_get_length()) ob_clean();
     echo json_encode(['success' => false, 'error' => 'No autorizado']);
     exit;
 }
@@ -24,6 +27,7 @@ $user = currentUser();
 $input = json_decode(file_get_contents('php://input'), true);
 
 if (empty($input['ventas']) || !is_array($input['ventas'])) {
+    if (ob_get_length()) ob_clean();
     echo json_encode(['success' => false, 'error' => 'No se recibieron ventas para sincronizar.']);
     exit;
 }
@@ -45,8 +49,8 @@ try {
         if (!$turno) {
             // Crear turno de contingencia si el usuario no tenía ninguno
             $stmtNuevoTurno = $pdo->prepare("
-                INSERT INTO turnos (UsuarioID, FechaApertura, MontoApertura, Estado, ObservacionesApertura)
-                VALUES (:uid, NOW(), 0, 'Abierto', 'Apertura automática por sincronización de contingencia offline')
+                INSERT INTO turnos (CajaID, UsuarioID, FechaApertura, MontoApertura, Estado, Observaciones)
+                VALUES (1, :uid, NOW(), 0, 'Abierto', 'Apertura automática por sincronización de contingencia offline')
             ");
             $stmtNuevoTurno->execute([':uid' => $user['id']]);
             $turnoID = (int)$pdo->lastInsertId();
@@ -152,6 +156,7 @@ try {
 
             $montoTotal = max(0, $subtotalBruto - $descGlobal);
             $montoNeto = (int)round($montoTotal / 1.19);
+            $montoIva = $montoTotal - $montoNeto;
             $puntosGanados = 0;
             if ($loyaltyHabilitado && $loyaltyPorcentaje > 0) {
                 $puntosGanados = (int)floor($montoTotal * ($loyaltyPorcentaje / 100));
@@ -265,6 +270,7 @@ try {
         }
     }
 
+    if (ob_get_length()) ob_clean();
     echo json_encode([
         'success' => true,
         'sincronizadas' => $sincronizadas,
@@ -273,6 +279,7 @@ try {
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
+    if (ob_get_length()) ob_clean();
     echo json_encode([
         'success' => false,
         'error' => 'Fallo general en sincronización: ' . $e->getMessage()

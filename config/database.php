@@ -1,10 +1,15 @@
 <?php
 // Version de la app: unica fuente de verdad, para que login y footer nunca queden desincronizados.
-define('APP_VERSION', 'v4.11.0');
+define('APP_VERSION', 'v4.11.1');
 
 // Novedades reales por versión, para la pantalla de bienvenida y el módulo "Acerca de".
 // Registra la cronología completa de la evolución del sistema desde su inicio.
 define('APP_CHANGELOG', [
+    'v4.11.1' => [
+        'Corrección de Sincronización Offline PWA: Corrección de cálculo de IVA y columnas en inserción de ventas almacenadas en contingencia en IndexedDB.',
+        'Resiliencia y Conectividad en Punto de Venta: Desacople de caídas de red frente a errores de procesamiento interno para evitar falso Modo Contingencia.',
+        'Clarificación de Estados en Barra Superior: Mensajes diferenciados entre pérdida real de conexión y ventas pendientes de subir a la nube.',
+    ],
     'v4.11.0' => [
         'Módulo Integral SII (Registro de Compras y Ventas RCV): Visualización oficial de compras y ventas sincronizadas directamente desde el SII por día y mes.',
         'Cuadratura Fiscal Diaria con Medios de Pago: Conciliación automática entre las ventas registradas en caja física y los DTEs oficiales informados al SII con detección de diferencias.',

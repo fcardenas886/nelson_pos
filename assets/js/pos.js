@@ -2527,6 +2527,16 @@ async function actualizarBadgePendientes() {
       if (badge) badge.style.display = 'inline-flex';
       if (countEl) countEl.textContent = count;
       if (btnSync) btnSync.style.display = 'inline-flex';
+
+      // Si hay red y no estamos en modo offline forzado, clarificar que la conexión está activa y solo hay ventas pendientes
+      const txt = document.getElementById('posOfflineStatusText');
+      const dot = document.getElementById('posOfflineStatusDot');
+      if (!posEstadoOfflineActivo && !posModoOfflineForzado) {
+        if (dot) dot.style.background = '#38bdf8';
+        if (txt) {
+          txt.innerHTML = '<i class="fa-solid fa-cloud-arrow-up" style="color: #38bdf8;"></i> <strong>Conexión Activa</strong> &bull; Hay ventas guardadas pendientes de sincronizar con el servidor';
+        }
+      }
     } else {
       if (badge) badge.style.display = 'none';
       if (btnSync) btnSync.style.display = 'none';
@@ -2599,7 +2609,7 @@ async function sincronizarVentasPendientes() {
   } catch (err) {
     console.error('[POS] Error sincronizando ventas offline:', err);
     toast('No se pudo completar la sincronización automática: ' + err.message, 'error');
-    marcarModoDesconectado(true);
+    verificarConectividadReal();
   } finally {
     sincronizandoOfflineEnCurso = false;
     if (btnSync) {
