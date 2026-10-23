@@ -177,52 +177,120 @@ $diasRestantesMes = max(0, $totalDiasMesActual - $diaActualDelMes);
 $porcentajeMesTranscurrido = round(($diaActualDelMes / $totalDiasMesActual) * 100, 1);
 $promedioDiarioMesAnt = ($diasEnMesAnterior > 0 && $totalMesAntCompleto > 0) ? (int)round($totalMesAntCompleto / $diasEnMesAnterior) : 0;
 
-// --- C. Proyección Ponderada por Patrón Comercial (Días Hábiles vs. Fines de Semana) ---
-// Analizamos hasta 90 días históricos (incluyendo meses anteriores) para detectar el patrón real del negocio
+// --- C. Proyección Ponderada por Patrón Comercial, Ciclo de Sueldos y Feriados ---
+if (!function_exists('getFeriadosChile')) {
+    function getFeriadosChile(int $year): array {
+        $feriados = [
+            sprintf('%04d-01-01', $year), // Año Nuevo
+            sprintf('%04d-05-01', $year), // Día del Trabajo
+            sprintf('%04d-05-21', $year), // Glorias Navales
+            sprintf('%04d-06-21', $year), // Pueblos Indígenas
+            sprintf('%04d-06-29', $year), // San Pedro y San Pablo
+            sprintf('%04d-07-16', $year), // Virgen del Carmen
+            sprintf('%04d-08-15', $year), // Asunción de la Virgen
+            sprintf('%04d-09-18', $year), // Fiestas Patrias
+            sprintf('%04d-09-19', $year), // Glorias del Ejército
+            sprintf('%04d-10-12', $year), // Encuentro de Dos Mundos
+            sprintf('%04d-10-31', $year), // Iglesias Evangélicas
+            sprintf('%04d-11-01', $year), // Todos los Santos
+            sprintf('%04d-12-08', $year), // Inmaculada Concepción
+            sprintf('%04d-12-25', $year), // Navidad
+        ];
+        if (function_exists('easter_date')) {
+            $easter = easter_date($year);
+            $feriados[] = date('Y-m-d', strtotime('-2 days', $easter));
+            $feriados[] = date('Y-m-d', strtotime('-1 day', $easter));
+        }
+        return $feriados;
+    }
+}
+
+// Analizamos hasta 90 días históricos para detectar el ritmo real del negocio
 $stmtHist = $pdo->query("
     SELECT 
         DATE(FechaVenta) as fecha,
         DAYOFWEEK(DATE(FechaVenta)) as dow_mysql,
+        DAY(DATE(FechaVenta)) as dia_mes,
         SUM(MontoTotal) as total_dia
     FROM ventas
     WHERE Estado = 'Completada' AND FechaVenta >= DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)
-    GROUP BY DATE(FechaVenta), DAYOFWEEK(DATE(FechaVenta))
+    GROUP BY DATE(FechaVenta), DAYOFWEEK(DATE(FechaVenta)), DAY(DATE(FechaVenta))
 ");
 $diasHistoricos = $stmtHist->fetchAll(PDO::FETCH_ASSOC);
 
 $ventasHabiles = [];
 $ventasFinSemana = [];
+$ventasSueldo = [];
+$ventasQuincena = [];
+$ventasValle = [];
 
 foreach ($diasHistoricos as $dh) {
     $dow = (int)$dh['dow_mysql']; // 1=Dom, 6=Vie, 7=Sab
+    $diaMes = (int)$dh['dia_mes'];
     $monto = (int)$dh['total_dia'];
+
     if ($dow === 1 || $dow === 6 || $dow === 7) {
         $ventasFinSemana[] = $monto;
     } else {
         $ventasHabiles[] = $monto;
+    }
+
+    if ($diaMes >= 28 || $diaMes <= 5) {
+        $ventasSueldo[] = $monto;
+    } elseif ($diaMes >= 14 && $diaMes <= 17) {
+        $ventasQuincena[] = $monto;
+    } else {
+        $ventasValle[] = $monto;
     }
 }
 
 $promedioDiaHabil = !empty($ventasHabiles) ? (int)round(array_sum($ventasHabiles) / count($ventasHabiles)) : $promedioDiarioMes;
 $promedioFinSemana = !empty($ventasFinSemana) ? (int)round(array_sum($ventasFinSemana) / count($ventasFinSemana)) : $promedioDiarioMes;
 
-// Calendario exacto de días restantes en el mes actual (desde mañana hasta fin de mes)
+// Factores comerciales de fase del mes (sueldo y quincena) con fallback conservador
+$promValle = !empty($ventasValle) ? (array_sum($ventasValle) / count($ventasValle)) : 0;
+$factorSueldo = 1.25;
+if ($promValle > 0 && !empty($ventasSueldo)) {
+    $calc = (array_sum($ventasSueldo) / count($ventasSueldo)) / $promValle;
+    $factorSueldo = max(1.05, min(1.60, round($calc, 2)));
+}
+$factorQuincena = 1.12;
+if ($promValle > 0 && !empty($ventasQuincena)) {
+    $calc = (array_sum($ventasQuincena) / count($ventasQuincena)) / $promValle;
+    $factorQuincena = max(1.02, min(1.40, round($calc, 2)));
+}
+
+// Simulación y proyección día por día de lo que resta de mes
+$yearActual = (int)date('Y');
+$feriadosChile = getFeriadosChile($yearActual);
+$proyeccionRestante = 0;
 $yearMonth = date('Y-m-');
-$habilesRestantes = 0;
-$finSemanaRestantes = 0;
 
 for ($dia = $diaActualDelMes + 1; $dia <= $totalDiasMesActual; $dia++) {
     $fechaDia = $yearMonth . sprintf('%02d', $dia);
-    $diaSemanaN = (int)date('N', strtotime($fechaDia)); // 1=Lun ... 5=Vie, 6=Sab, 7=Dom
-    if ($diaSemanaN >= 5) {
-        $finSemanaRestantes++;
+    $diaSemanaN = (int)date('N', strtotime($fechaDia)); // 1=Lun ... 7=Dom
+    $esFinde = ($diaSemanaN >= 5);
+    $esFeriado = in_array($fechaDia, $feriadosChile, true);
+
+    if ($esFeriado) {
+        $baseDia = max($promedioFinSemana, (int)round($promedioDiaHabil * 1.30));
+    } elseif ($esFinde) {
+        $baseDia = $promedioFinSemana;
     } else {
-        $habilesRestantes++;
+        $baseDia = $promedioDiaHabil;
     }
+
+    if ($dia >= 28 || $dia <= 5) {
+        $estimadoDia = (int)round($baseDia * $factorSueldo);
+    } elseif ($dia >= 14 && $dia <= 17) {
+        $estimadoDia = (int)round($baseDia * $factorQuincena);
+    } else {
+        $estimadoDia = $baseDia;
+    }
+
+    $proyeccionRestante += $estimadoDia;
 }
 
-// Proyección ponderada considerando cuántos fines de semana y días hábiles faltan
-$proyeccionRestante = ($habilesRestantes * $promedioDiaHabil) + ($finSemanaRestantes * $promedioFinSemana);
 $proyeccionCierrePonderada = $totalMesActual + $proyeccionRestante;
 
 if ($totalMesAntCorte > 0) {
