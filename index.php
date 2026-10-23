@@ -176,6 +176,7 @@ $promedioDiarioMes = $diaActualDelMes > 0 ? (int)round($totalMesActual / $diaAct
 $proyeccionCierreMes = $promedioDiarioMes * $totalDiasMesActual;
 $diasRestantesMes = max(0, $totalDiasMesActual - $diaActualDelMes);
 $porcentajeMesTranscurrido = round(($diaActualDelMes / $totalDiasMesActual) * 100, 1);
+$promedioDiarioMesAnt = ($diasEnMesAnterior > 0 && $totalMesAntCompleto > 0) ? (int)round($totalMesAntCompleto / $diasEnMesAnterior) : 0;
 
 if ($totalMesAntCorte > 0) {
     $difMesCorte = $totalMesActual - $totalMesAntCorte;

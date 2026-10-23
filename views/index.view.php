@@ -103,75 +103,95 @@
     </div>
   </div>
 
-  <!-- Panel de Rendimiento Mensual -->
+  <!-- Panel de Comparativa Mensual & Proyección -->
   <div class="table-card" style="padding: 1.35rem; display: flex; flex-direction: column; justify-content: space-between;">
     <div>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-          <i class="fa-solid fa-calendar-check" style="color: #6366f1;"></i> Rendimiento <?= $nombreMesActual ?>
+          <i class="fa-solid fa-scale-balanced" style="color: #6366f1;"></i> Comparativa Mes a Mes
         </h2>
-        <span style="font-size: 0.75rem; color: var(--text-muted); background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.25); color: #818cf8; padding: 0.15rem 0.5rem; border-radius: 6px; font-weight: 600;">
-          Día <?= $diaActualDelMes ?> de <?= $totalDiasMesActual ?>
+        <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.25); color: #818cf8; padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 600;">
+          <?= $nombreMesActual ?> vs. <?= $nombreMesAnterior ?>
         </span>
       </div>
 
-      <!-- Cifra Grande Acumulada -->
-      <div style="background: rgba(15, 23, 42, 0.6); padding: 1rem; border-radius: 10px; border: 1px solid rgba(51, 65, 85, 0.5); margin-bottom: 1rem;">
-        <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.2rem; display: flex; justify-content: space-between;">
-          <span>Ventas acumuladas del mes</span>
-          <span style="font-weight: 600; color: #cbd5e1;"><?= $cantVentasMesActual ?> ventas</span>
-        </div>
-        <div style="font-size: 1.65rem; font-weight: 800; color: #f8fafc; letter-spacing: -0.5px;">
-          <?= formatCLP($totalMesActual) ?>
-        </div>
-
-        <!-- Comparativa con mismo período del mes anterior -->
-        <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.45rem; font-size: 0.78rem;">
-          <span style="display: inline-flex; align-items: center; gap: 0.2rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 5px; <?= $porcMesCorte >= 0 ? 'background: rgba(16, 185, 129, 0.15); color: #10b981;' : 'background: rgba(239, 68, 68, 0.15); color: #ef4444;' ?>">
-            <i class="fa-solid <?= $porcMesCorte >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' ?>"></i>
-            <?= ($porcMesCorte >= 0 ? '+' : '') . $porcMesCorte ?>%
-          </span>
-          <span style="color: var(--text-muted);">
-            vs mismo día de <?= $nombreMesAnterior ?> (<?= formatCLP($totalMesAntCorte) ?>)
-          </span>
-        </div>
-      </div>
-
-      <!-- Barra de Transcurso del Mes -->
-      <div style="margin-bottom: 1rem;">
-        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.35rem;">
-          <span>Avance del calendario</span>
-          <span><strong><?= $porcentajeMesTranscurrido ?>%</strong> transcurrido</span>
-        </div>
-        <div style="background: rgba(51, 65, 85, 0.5); height: 7px; border-radius: 999px; overflow: hidden;">
-          <div style="width: <?= $porcentajeMesTranscurrido ?>%; height: 100%; background: linear-gradient(90deg, #4f46e5, #06b6d4); border-radius: 999px;"></div>
-        </div>
-      </div>
-
-      <!-- Bloques de Ritmo y Proyección -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-dark); border-radius: 8px; padding: 0.75rem;">
-          <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Ritmo Diario</div>
-          <div style="font-size: 1.05rem; font-weight: 700; color: #38bdf8; margin-top: 0.2rem;">
-            <?= formatCLP($promedioDiarioMes) ?>
+      <!-- Dos Columnas Lado a Lado: Mes Anterior vs Mes Actual -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 1rem;">
+        
+        <!-- Columna Mes Anterior (Septiembre) -->
+        <div style="background: rgba(15, 23, 42, 0.55); border: 1px solid var(--border-dark); border-radius: 10px; padding: 0.85rem;">
+          <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; display: flex; align-items: center; gap: 0.35rem;">
+            <i class="fa-solid fa-calendar-xmark" style="color: #64748b;"></i> <?= $nombreMesAnterior ?>
           </div>
-          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">promedio por día</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #cbd5e1; margin-top: 0.3rem;">
+            <?= $totalMesAntCompleto > 0 ? formatCLP($totalMesAntCompleto) : '$0' ?>
+          </div>
+          <div style="font-size: 0.72rem; color: #64748b; margin-top: 0.25rem;">
+            <?php if ($totalMesAntCompleto > 0): ?>
+              Promedio: <?= formatCLP($promedioDiarioMesAnt) ?>/día
+            <?php else: ?>
+              <span style="font-style: italic;">Sin registros en BD</span>
+            <?php endif; ?>
+          </div>
         </div>
 
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-dark); border-radius: 8px; padding: 0.75rem;">
-          <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Cierre Estimado</div>
-          <div style="font-size: 1.05rem; font-weight: 700; color: #a855f7; margin-top: 0.2rem;">
+        <!-- Columna Mes Actual (Octubre) -->
+        <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 10px; padding: 0.85rem;">
+          <div style="font-size: 0.75rem; color: #818cf8; font-weight: 600; text-transform: uppercase; display: flex; align-items: center; gap: 0.35rem;">
+            <i class="fa-solid fa-calendar-day"></i> <?= $nombreMesActual ?> (Hoy)
+          </div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #f8fafc; margin-top: 0.3rem;">
+            <?= formatCLP($totalMesActual) ?>
+          </div>
+          <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.25rem;">
+            <?= $cantVentasMesActual ?> ventas (Día <?= $diaActualDelMes ?>/<?= $totalDiasMesActual ?>)
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tarjeta de Proyección y Ritmo -->
+      <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(51, 65, 85, 0.5); border-radius: 10px; padding: 0.9rem; margin-bottom: 0.85rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+          <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> Proyección Fin de Mes
+          </span>
+          <span style="font-size: 1.1rem; font-weight: 800; color: #a855f7;">
             <?= formatCLP($proyeccionCierreMes) ?>
-          </div>
-          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">al ritmo actual</div>
+          </span>
+        </div>
+        <p style="font-size: 0.74rem; color: var(--text-muted); margin: 0 0 0.6rem 0;">
+          Estimado manteniendo el ritmo actual de <strong><?= formatCLP($promedioDiarioMes) ?>/día</strong>
+        </p>
+
+        <!-- Barra de Avance en el Mes -->
+        <div style="background: rgba(51, 65, 85, 0.5); height: 7px; border-radius: 999px; overflow: hidden; margin-bottom: 0.35rem;">
+          <div style="width: <?= $porcentajeMesTranscurrido ?>%; height: 100%; background: linear-gradient(90deg, #4f46e5, #a855f7); border-radius: 999px;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #64748b;">
+          <span><?= $porcentajeMesTranscurrido ?>% del mes transcurrido</span>
+          <span>Restan <?= $diasRestantesMes ?> días</span>
         </div>
       </div>
     </div>
 
-    <!-- Referencia Mes Anterior -->
-    <div style="padding-top: 0.75rem; border-top: 1px solid var(--border-dark); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted);">
-      <span><i class="fa-solid fa-flag-checkered"></i> Cierre de <?= $nombreMesAnterior ?>:</span>
-      <strong style="color: #cbd5e1;"><?= formatCLP($totalMesAntCompleto) ?></strong>
+    <!-- Balance Comparativo Inferior -->
+    <div style="padding-top: 0.75rem; border-top: 1px solid var(--border-dark); font-size: 0.8rem;">
+      <?php if ($totalMesAntCompleto > 0): ?>
+        <?php $difVsAnt = $proyeccionCierreMes - $totalMesAntCompleto; ?>
+        <?php $porcVsAnt = round(($difVsAnt / $totalMesAntCompleto) * 100, 1); ?>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="color: var(--text-muted);">Proyección vs. <?= $nombreMesAnterior ?>:</span>
+          <strong style="color: <?= $difVsAnt >= 0 ? '#10b981' : '#f59e0b' ?>;">
+            <?= ($difVsAnt >= 0 ? '+' : '') . formatCLP($difVsAnt) ?> (<?= ($porcVsAnt >= 0 ? '+' : '') . $porcVsAnt ?>%)
+          </strong>
+        </div>
+      <?php else: ?>
+        <div style="display: flex; align-items: center; gap: 0.4rem; color: #38bdf8; font-size: 0.76rem;">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>Primer mes de registro en la base de datos local.</span>
+        </div>
+      <?php endif; ?>
     </div>
   </div>
 
