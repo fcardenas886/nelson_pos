@@ -10,6 +10,7 @@ const PRECACHE_ASSETS = [
   'assets/js/ui.js',
   'assets/js/pos-offline-db.js',
   'assets/js/printer-direct.js',
+  'assets/vendor/chart.umd.min.js',
   'assets/vendor/fontawesome/css/all.min.css',
   'assets/icons/icon-192.png',
   'assets/icons/icon-512.png',
