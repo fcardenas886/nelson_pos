@@ -150,19 +150,39 @@
 
       </div>
 
-      <!-- Tarjeta de Proyección y Ritmo -->
+      <!-- Tarjeta de Proyección Ponderada por Patrón Comercial -->
       <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(51, 65, 85, 0.5); border-radius: 10px; padding: 0.9rem; margin-bottom: 0.85rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
           <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 0.4rem;">
-            <i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> Proyección Fin de Mes
+            <i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> Proyección Ponderada
           </span>
-          <span style="font-size: 1.1rem; font-weight: 800; color: #a855f7;">
-            <?= formatCLP($proyeccionCierreMes) ?>
+          <span style="font-size: 1.15rem; font-weight: 800; color: #a855f7;">
+            <?= formatCLP($proyeccionCierrePonderada) ?>
           </span>
         </div>
-        <p style="font-size: 0.74rem; color: var(--text-muted); margin: 0 0 0.6rem 0;">
-          Estimado manteniendo el ritmo actual de <strong><?= formatCLP($promedioDiarioMes) ?>/día</strong>
+        <p style="font-size: 0.74rem; color: var(--text-muted); margin: 0 0 0.5rem 0; line-height: 1.4;">
+          Ponderada según el patrón comercial de tu tienda:
         </p>
+
+        <!-- Desglose de Patrón Comercial -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.65rem; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(51, 65, 85, 0.4); border-radius: 8px; padding: 0.5rem 0.65rem;">
+          <div>
+            <div style="font-size: 0.68rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">
+              💼 Días Hábiles (x<?= $habilesRestantes ?>)
+            </div>
+            <div style="font-size: 0.88rem; font-weight: 700; color: #38bdf8; margin-top: 0.1rem;">
+              <?= formatCLP($promedioDiaHabil) ?> <span style="font-size: 0.68rem; font-weight: 400; color: #64748b;">/día</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 0.68rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">
+              🎉 Fin de Semana (x<?= $finSemanaRestantes ?>)
+            </div>
+            <div style="font-size: 0.88rem; font-weight: 700; color: #f59e0b; margin-top: 0.1rem;">
+              <?= formatCLP($promedioFinSemana) ?> <span style="font-size: 0.68rem; font-weight: 400; color: #64748b;">/día</span>
+            </div>
+          </div>
+        </div>
 
         <!-- Barra de Avance en el Mes -->
         <div style="background: rgba(51, 65, 85, 0.5); height: 7px; border-radius: 999px; overflow: hidden; margin-bottom: 0.35rem;">
@@ -178,7 +198,7 @@
     <!-- Balance Comparativo Inferior -->
     <div style="padding-top: 0.75rem; border-top: 1px solid var(--border-dark); font-size: 0.8rem;">
       <?php if ($totalMesAntCompleto > 0): ?>
-        <?php $difVsAnt = $proyeccionCierreMes - $totalMesAntCompleto; ?>
+        <?php $difVsAnt = $proyeccionCierrePonderada - $totalMesAntCompleto; ?>
         <?php $porcVsAnt = round(($difVsAnt / $totalMesAntCompleto) * 100, 1); ?>
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <span style="color: var(--text-muted);">Proyección vs. <?= $nombreMesAnterior ?>:</span>

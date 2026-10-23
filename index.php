@@ -173,10 +173,57 @@ $totalMesAntCompleto = (int)$stmtMesAntCompleto->fetch()['total'];
 
 // Ritmo y proyecciones
 $promedioDiarioMes = $diaActualDelMes > 0 ? (int)round($totalMesActual / $diaActualDelMes) : 0;
-$proyeccionCierreMes = $promedioDiarioMes * $totalDiasMesActual;
 $diasRestantesMes = max(0, $totalDiasMesActual - $diaActualDelMes);
 $porcentajeMesTranscurrido = round(($diaActualDelMes / $totalDiasMesActual) * 100, 1);
 $promedioDiarioMesAnt = ($diasEnMesAnterior > 0 && $totalMesAntCompleto > 0) ? (int)round($totalMesAntCompleto / $diasEnMesAnterior) : 0;
+
+// --- C. Proyección Ponderada por Patrón Comercial (Días Hábiles vs. Fines de Semana) ---
+// Analizamos hasta 90 días históricos (incluyendo meses anteriores) para detectar el patrón real del negocio
+$stmtHist = $pdo->query("
+    SELECT 
+        DATE(FechaVenta) as fecha,
+        DAYOFWEEK(DATE(FechaVenta)) as dow_mysql,
+        SUM(MontoTotal) as total_dia
+    FROM ventas
+    WHERE Estado = 'Completada' AND FechaVenta >= DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)
+    GROUP BY DATE(FechaVenta), DAYOFWEEK(DATE(FechaVenta))
+");
+$diasHistoricos = $stmtHist->fetchAll(PDO::FETCH_ASSOC);
+
+$ventasHabiles = [];
+$ventasFinSemana = [];
+
+foreach ($diasHistoricos as $dh) {
+    $dow = (int)$dh['dow_mysql']; // 1=Dom, 6=Vie, 7=Sab
+    $monto = (int)$dh['total_dia'];
+    if ($dow === 1 || $dow === 6 || $dow === 7) {
+        $ventasFinSemana[] = $monto;
+    } else {
+        $ventasHabiles[] = $monto;
+    }
+}
+
+$promedioDiaHabil = !empty($ventasHabiles) ? (int)round(array_sum($ventasHabiles) / count($ventasHabiles)) : $promedioDiarioMes;
+$promedioFinSemana = !empty($ventasFinSemana) ? (int)round(array_sum($ventasFinSemana) / count($ventasFinSemana)) : $promedioDiarioMes;
+
+// Calendario exacto de días restantes en el mes actual (desde mañana hasta fin de mes)
+$yearMonth = date('Y-m-');
+$habilesRestantes = 0;
+$finSemanaRestantes = 0;
+
+for ($dia = $diaActualDelMes + 1; $dia <= $totalDiasMesActual; $dia++) {
+    $fechaDia = $yearMonth . sprintf('%02d', $dia);
+    $diaSemanaN = (int)date('N', strtotime($fechaDia)); // 1=Lun ... 5=Vie, 6=Sab, 7=Dom
+    if ($diaSemanaN >= 5) {
+        $finSemanaRestantes++;
+    } else {
+        $habilesRestantes++;
+    }
+}
+
+// Proyección ponderada considerando cuántos fines de semana y días hábiles faltan
+$proyeccionRestante = ($habilesRestantes * $promedioDiaHabil) + ($finSemanaRestantes * $promedioFinSemana);
+$proyeccionCierrePonderada = $totalMesActual + $proyeccionRestante;
 
 if ($totalMesAntCorte > 0) {
     $difMesCorte = $totalMesActual - $totalMesAntCorte;
