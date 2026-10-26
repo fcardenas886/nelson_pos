@@ -1,10 +1,16 @@
 <?php
 // Version de la app: unica fuente de verdad, para que login y footer nunca queden desincronizados.
-define('APP_VERSION', 'v4.11.1');
+define('APP_VERSION', 'v4.12.0');
 
 // Novedades reales por versión, para la pantalla de bienvenida y el módulo "Acerca de".
 // Registra la cronología completa de la evolución del sistema desde su inicio.
 define('APP_CHANGELOG', [
+    'v4.12.0' => [
+        'Productos sin Control de Stock (Stock Fijo): Nueva opción por producto para desactivar el descuento de inventario en ventas y devoluciones, ideal para pan, verduras, plantas o servicios.',
+        'Normalización Automática de Saldos: Al desmarcar el control de inventario en productos con saldo negativo histórico, el sistema limpia y restablece automáticamente el stock a 0.',
+        'Visualización Clara en POS y Catálogo: Identificación con insignia "Sin Control" y stock "Fijo" en lugar de números negativos, previniendo bloqueos de venta y falsas alarmas de stock bajo.',
+        'Protección de Kardex e Informes: Las ventas de productos sin control de stock no generan movimientos físicos ficticios en Kardex y se mantienen 100% contabilizadas en ventas, cierres de caja y estadísticas.',
+    ],
     'v4.11.1' => [
         'Corrección de Sincronización Offline PWA: Corrección de cálculo de IVA y columnas en inserción de ventas almacenadas en contingencia en IndexedDB.',
         'Resiliencia y Conectividad en Punto de Venta: Desacople de caídas de red frente a errores de procesamiento interno para evitar falso Modo Contingencia.',
