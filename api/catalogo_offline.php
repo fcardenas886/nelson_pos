@@ -20,7 +20,7 @@ try {
     // 1. Productos activos
     $stmtProd = $pdo->query("
         SELECT p.ProductoID, p.CodigoBarras, p.Nombre, p.PrecioVenta, p.CostoCompra,
-               p.Stock, p.StockMinimo, p.UnidadMedida, p.EsPesable, p.EsPrecioVariable, p.CodigoPLU,
+               p.Stock, p.StockMinimo, p.UnidadMedida, COALESCE(p.ControlaStock, 1) AS ControlaStock, p.EsPesable, p.EsPrecioVariable, p.CodigoPLU,
                p.CategoriaID, COALESCE(cat.Nombre, 'Sin Categoría') AS CategoriaNombre
         FROM productos p
         LEFT JOIN categorias cat ON p.CategoriaID = cat.CategoriaID

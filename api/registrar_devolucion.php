@@ -49,7 +49,7 @@ try {
         $cantidadesPorProducto[$pidRaw] = ($cantidadesPorProducto[$pidRaw] ?? 0) + $cant;
     }
 
-    $stmtFindP = $pdo->prepare("SELECT ProductoID FROM productos WHERE ProductoID = :id OR CodigoBarras = :barcode LIMIT 1");
+    $stmtFindP = $pdo->prepare("SELECT ProductoID, COALESCE(ControlaStock, 1) AS ControlaStock FROM productos WHERE ProductoID = :id OR CodigoBarras = :barcode LIMIT 1");
     // Todo en unidades físicas: un pack de 3 vendido cuenta como 3 unidades, sumando todas las
     // líneas del producto en la venta (unidad suelta + packs). Así se repone el stock real.
     $stmtDetalleVenta = $pdo->prepare("
@@ -68,7 +68,9 @@ try {
 
     foreach ($cantidadesPorProducto as $productoInput => $cantidad) {
         $stmtFindP->execute([':id' => (int)$productoInput, ':barcode' => $productoInput]);
-        $productoID = (int)$stmtFindP->fetchColumn();
+        $rowP = $stmtFindP->fetch(PDO::FETCH_ASSOC);
+        $productoID = (int)($rowP['ProductoID'] ?? 0);
+        $controlaStock = (int)($rowP['ControlaStock'] ?? 1);
         if ($productoID <= 0) {
             throw new Exception("El producto '$productoInput' no está registrado en el catálogo.");
         }
@@ -99,7 +101,8 @@ try {
             'producto_id' => $productoID,
             'cantidad' => $cantidad,
             'precio_unitario' => $precioUnitario,
-            'monto' => $montoItem
+            'monto' => $montoItem,
+            'controla_stock' => $controlaStock
         ];
     }
 
@@ -135,14 +138,16 @@ try {
             ':cant' => $item['cantidad'],
             ':monto' => $item['monto']
         ]);
-        $stmtUpdStock->execute([':cant' => $item['cantidad'], ':pid' => $item['producto_id']]);
-        $stmtK->execute([
-            ':pid' => $item['producto_id'],
-            ':did' => $devolucionID,
-            ':cant' => $item['cantidad'],
-            ':val' => $item['precio_unitario'],
-            ':pid2' => $item['producto_id']
-        ]);
+        if ($item['controla_stock'] === 1) {
+            $stmtUpdStock->execute([':cant' => $item['cantidad'], ':pid' => $item['producto_id']]);
+            $stmtK->execute([
+                ':pid' => $item['producto_id'],
+                ':did' => $devolucionID,
+                ':cant' => $item['cantidad'],
+                ':val' => $item['precio_unitario'],
+                ':pid2' => $item['producto_id']
+            ]);
+        }
     }
 
     // 3. Generar un solo Vale si es Nota de Crédito, Efectivo (reembolso diferido), o Cambio de Mercadería

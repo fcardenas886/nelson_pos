@@ -74,7 +74,7 @@ try {
             throw new Exception("Cantidad inválida para el producto ID $pid.");
         }
 
-        $stmtP = $pdo->prepare("SELECT ProductoID, Nombre, PrecioVenta, CostoCompra, Stock, EsAfecto, EsPrecioVariable FROM productos WHERE ProductoID = :pid FOR UPDATE");
+        $stmtP = $pdo->prepare("SELECT ProductoID, Nombre, PrecioVenta, CostoCompra, Stock, ControlaStock, EsAfecto, EsPrecioVariable FROM productos WHERE ProductoID = :pid FOR UPDATE");
         $stmtP->execute([':pid' => $pid]);
         $prod = $stmtP->fetch();
 
@@ -82,8 +82,9 @@ try {
             throw new Exception("El producto ID $pid no fue encontrado.");
         }
 
+        $controlaStock = (int)($prod['ControlaStock'] ?? 1);
         $unidadesPorProducto[$pid] = ($unidadesPorProducto[$pid] ?? 0) + $unidadesFisicas;
-        if (!$permitirStockNegativo && $prod['Stock'] < $unidadesPorProducto[$pid]) {
+        if ($controlaStock === 1 && !$permitirStockNegativo && $prod['Stock'] < $unidadesPorProducto[$pid]) {
             throw new Exception("Stock insuficiente para '{$prod['Nombre']}'. Disponible: {$prod['Stock']} unidades (requeridas: {$unidadesPorProducto[$pid]}).");
         }
 
@@ -281,18 +282,21 @@ try {
             ':subtotal' => $item['subtotal']
         ]);
 
-        $stmtUpdStock->execute([':cant_fisica' => $unidadesFisicas, ':pid' => $p['ProductoID']]);
+        $controlaStock = (int)($p['ControlaStock'] ?? 1);
+        if ($controlaStock === 1) {
+            $stmtUpdStock->execute([':cant_fisica' => $unidadesFisicas, ':pid' => $p['ProductoID']]);
 
-        // Saldo encadenado: si el producto aparece en varias líneas, cada una parte del saldo de la anterior
-        $stockCorriente[$p['ProductoID']] = ($stockCorriente[$p['ProductoID']] ?? (float)$p['Stock']) - $unidadesFisicas;
-        $nuevoStock = $stockCorriente[$p['ProductoID']];
-        $stmtKardex->execute([
-            ':pid' => $p['ProductoID'],
-            ':vid' => $ventaID,
-            ':cant_fisica' => $unidadesFisicas,
-            ':saldo' => $nuevoStock,
-            ':val' => $item['precio']
-        ]);
+            // Saldo encadenado: si el producto aparece en varias líneas, cada una parte del saldo de la anterior
+            $stockCorriente[$p['ProductoID']] = ($stockCorriente[$p['ProductoID']] ?? (float)$p['Stock']) - $unidadesFisicas;
+            $nuevoStock = $stockCorriente[$p['ProductoID']];
+            $stmtKardex->execute([
+                ':pid' => $p['ProductoID'],
+                ':vid' => $ventaID,
+                ':cant_fisica' => $unidadesFisicas,
+                ':saldo' => $nuevoStock,
+                ':val' => $item['precio']
+            ]);
+        }
     }
 
     // 4. Procesar Pagos (Múltiples / Pagos Mixtos / Crédito / Puntos)

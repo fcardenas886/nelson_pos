@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stock = (float)($_POST['stock'] ?? 0);
         $stockMinimo = (float)($_POST['stock_minimo'] ?? 0);
         $activo = isset($_POST['activo']) ? 1 : 0;
+        $controlaStock = isset($_POST['controla_stock']) ? 1 : 0;
         $esPesable = isset($_POST['es_pesable']) ? 1 : 0;
         $esPrecioVariable = isset($_POST['es_precio_variable']) ? 1 : 0;
         $codigoPLU = !empty($_POST['codigo_plu']) ? trim($_POST['codigo_plu']) : null;
@@ -53,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             UPDATE productos
                             SET CodigoBarras = :codigo, Nombre = :nombre, CategoriaID = :cat,
                                 PrecioVenta = :precio, CostoCompra = :costo,
-                                StockMinimo = :stockmin, Activo = :activo,
+                                StockMinimo = :stockmin, Activo = :activo, ControlaStock = :controlastock,
                                 EsPesable = :espesable, EsPrecioVariable = :esvariable, CodigoPLU = :plu
                             WHERE ProductoID = :id
                         ");
@@ -65,11 +66,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ':costo' => $costoCompra,
                             ':stockmin' => $stockMinimo,
                             ':activo' => $activo,
+                            ':controlastock' => $controlaStock,
                             ':espesable' => $esPesable,
                             ':esvariable' => $esPrecioVariable,
                             ':plu' => $codigoPLU,
                             ':id' => $id
                         ]);
+
+                        // Si el producto se configuró sin control de stock y tenía saldo negativo, normalizarlo a 0
+                        if ($controlaStock === 0) {
+                            $stmtClean = $pdo->prepare("UPDATE productos SET Stock = 0 WHERE ProductoID = :pid AND Stock < 0");
+                            $stmtClean->execute([':pid' => $id]);
+                        }
 
                         // Propagar costo actualizado a ventas históricas que registraron costo $0
                         if ($costoCompra > 0) {
@@ -85,8 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     } else {
                         $stmt = $pdo->prepare("
-                            INSERT INTO productos (CodigoBarras, Nombre, CategoriaID, PrecioVenta, CostoCompra, Stock, StockMinimo, Activo, EsPesable, EsPrecioVariable, CodigoPLU)
-                            VALUES (:codigo, :nombre, :cat, :precio, :costo, :stock, :stockmin, :activo, :espesable, :esvariable, :plu)
+                            INSERT INTO productos (CodigoBarras, Nombre, CategoriaID, PrecioVenta, CostoCompra, Stock, StockMinimo, Activo, ControlaStock, EsPesable, EsPrecioVariable, CodigoPLU)
+                            VALUES (:codigo, :nombre, :cat, :precio, :costo, :stock, :stockmin, :activo, :controlastock, :espesable, :esvariable, :plu)
                         ");
                         $stmt->execute([
                             ':codigo' => $codigo,
@@ -97,14 +105,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ':stock' => $stock,
                             ':stockmin' => $stockMinimo,
                             ':activo' => $activo,
+                            ':controlastock' => $controlaStock,
                             ':espesable' => $esPesable,
                             ':esvariable' => $esPrecioVariable,
                             ':plu' => $codigoPLU
                         ]);
                         $id = (int)$pdo->lastInsertId();
 
-                        // Registrar movimiento de apertura (Stock Inicial) en Kardex
-                        if ($id > 0) {
+                        // Registrar movimiento de apertura (Stock Inicial) en Kardex solo si controla stock
+                        if ($id > 0 && $controlaStock === 1) {
                             $stmtKardexIni = $pdo->prepare("
                                 INSERT INTO kardex (ProductoID, TipoTransaccion, CantidadEntrada, CantidadSalida, StockSaldo, ValorUnitario, CostoMedioPonderado, FechaMovimiento)
                                 VALUES (:pid, 'INICIAL', :cant_in, 0, :saldo, :costo, :cmp, NOW())

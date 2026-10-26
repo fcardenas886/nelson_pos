@@ -75,8 +75,15 @@
                 <span class="badge badge-danger" style="font-size: 0.65rem; padding: 0.15rem 0.3rem; margin-left: 0.4rem;">INACTIVO</span>
               <?php endif; ?>
             </td>
-            <td><?= htmlspecialchars($p['Categoria'] ?: 'General') ?></td>
-            <td style="font-weight: 600;"><?= $p['Stock'] ?></td>
+            <td style="font-weight: 600;">
+              <?php if (isset($p['ControlaStock']) && (int)$p['ControlaStock'] === 0): ?>
+                <span style="color: #94a3b8; font-size: 0.82rem;" title="Producto sin control de inventario (stock fijo)">
+                  <i class="fa-solid fa-infinity"></i> Fijo
+                </span>
+              <?php else: ?>
+                <?= $p['Stock'] ?>
+              <?php endif; ?>
+            </td>
             <td style="font-weight: 700; color: var(--success);">
               <?php if (!empty($p['EsPrecioVariable'])): ?>
                 <span style="color: #60a5fa; font-size: 0.85rem;" title="Precio fijado en mostrador al vender">
@@ -89,6 +96,8 @@
             <td>
               <?php if (!$p['Activo']): ?>
                 <span class="badge badge-secondary">Inactivo</span>
+              <?php elseif (isset($p['ControlaStock']) && (int)$p['ControlaStock'] === 0): ?>
+                <span class="badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3);">Sin Control</span>
               <?php elseif ($p['Stock'] <= 0): ?>
                 <span class="badge badge-danger">Sin Stock</span>
               <?php elseif ($p['Stock'] <= $p['StockMinimo']): ?>
@@ -223,6 +232,18 @@
         </small>
       </div>
 
+      <div style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.15rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" name="controla_stock" id="prodControlaStockInput" value="1" checked onchange="toggleControlaStockFields()" style="width: 18px; height: 18px; cursor: pointer;">
+          <label for="prodControlaStockInput" style="font-size: 0.85rem; font-weight: 600; cursor: pointer; user-select: none; color: #10b981;">
+            <i class="fa-solid fa-boxes-stacked"></i> Controlar inventario / stock
+          </label>
+        </div>
+        <small id="prodControlaStockHint" style="display: none; color: #94a3b8; font-size: 0.74rem; padding-left: 1.6rem;">
+          <i class="fa-solid fa-circle-info"></i> Al desmarcar esta opción, el stock no se rebajará al vender ni aumentará al devolver. Se mantendrá tal cual (ideal para pan, verduras o servicios).
+        </small>
+      </div>
+
       <div style="display: flex; align-items: center; gap: 0.5rem;">
         <input type="checkbox" name="activo" id="prodActivoInput" value="1" checked style="width: 18px; height: 18px; cursor: pointer;">
         <label for="prodActivoInput" style="font-size: 0.85rem; font-weight: 600; cursor: pointer; user-select: none;">Producto Activo (disponible para venta)</label>
@@ -280,6 +301,16 @@ function togglePrecioVariableField() {
   }
 }
 
+function toggleControlaStockFields() {
+  const controla = document.getElementById('prodControlaStockInput').checked;
+  const hint = document.getElementById('prodControlaStockHint');
+  if (!controla) {
+    hint.style.display = 'block';
+  } else {
+    hint.style.display = 'none';
+  }
+}
+
 function abrirNuevoModal() {
   document.getElementById('modalTitle').textContent = 'Agregar Nuevo Producto';
   document.getElementById('prodIdInput').value = '';
@@ -291,11 +322,13 @@ function abrirNuevoModal() {
   document.getElementById('prodStockInput').value = '0';
   document.getElementById('prodStockMinimoInput').value = '0';
   document.getElementById('prodActivoInput').checked = true;
+  document.getElementById('prodControlaStockInput').checked = true;
   document.getElementById('prodEsPesableInput').checked = false;
   document.getElementById('prodEsPrecioVariableInput').checked = false;
   document.getElementById('prodCodigoPLUInput').value = '';
   togglePluField();
   togglePrecioVariableField();
+  toggleControlaStockFields();
 
   // Stock editable solo al crear (stock inicial)
   var stockInput = document.getElementById('prodStockInput');
@@ -317,11 +350,13 @@ function abrirEditarModal(p) {
   document.getElementById('prodStockInput').value = p.Stock;
   document.getElementById('prodStockMinimoInput').value = p.StockMinimo;
   document.getElementById('prodActivoInput').checked = parseInt(p.Activo) === 1;
+  document.getElementById('prodControlaStockInput').checked = (p.ControlaStock === undefined || parseInt(p.ControlaStock) === 1);
   document.getElementById('prodEsPesableInput').checked = parseInt(p.EsPesable) === 1;
   document.getElementById('prodEsPrecioVariableInput').checked = parseInt(p.EsPrecioVariable) === 1;
   document.getElementById('prodCodigoPLUInput').value = p.CodigoPLU || '';
   togglePluField();
   togglePrecioVariableField();
+  toggleControlaStockFields();
 
   // Al editar, el stock actual es de solo lectura: se ajusta por Compras/ventas/Ajustes
   var stockInput = document.getElementById('prodStockInput');

@@ -16,7 +16,7 @@ $statsVentas = $stmtVentasHoy->fetch();
 $stmtLowStock = $pdo->query("
     SELECT COUNT(*) as bajo_stock 
     FROM productos 
-    WHERE Stock <= StockMinimo AND Activo = TRUE
+    WHERE Stock <= StockMinimo AND Activo = TRUE AND COALESCE(ControlaStock, 1) = 1
 ");
 $lowStockCount = $stmtLowStock->fetch()['bajo_stock'];
 

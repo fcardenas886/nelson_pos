@@ -675,7 +675,7 @@ function renderProductosGrid() {
         <div class="product-sku">${p.CodigoBarras ? '#' + p.CodigoBarras : (p.CodigoPLU ? 'PLU #' + p.CodigoPLU : 'Sin código')}</div>
         <div class="product-meta">
           <div class="product-price">${parseInt(p.EsPrecioVariable) === 1 ? '<span style="color: #60a5fa; font-size: 0.82em;"><i class="fa-solid fa-tag"></i> Variable</span>' : '$' + formatNumber(p.PrecioVenta)}</div>
-          <div class="product-stock" title="Stock en tienda">${p.Stock} disp.</div>
+          <div class="product-stock" title="Stock en tienda">${(p.ControlaStock !== undefined && parseInt(p.ControlaStock) === 0) ? '<i class="fa-solid fa-infinity"></i> Fijo' : p.Stock + ' disp.'}</div>
         </div>
       </div>
     `).join('');
@@ -686,7 +686,7 @@ function renderProductosGrid() {
         <div style="font-size: 0.75rem; color: var(--text-muted);">${p.CodigoBarras ? '#' + p.CodigoBarras : (p.CodigoPLU ? 'PLU #' + p.CodigoPLU : 'Sin código')}</div>
         <div class="product-meta">
           <div class="product-price">${parseInt(p.EsPrecioVariable) === 1 ? '<span style="color: #60a5fa; font-size: 0.85em;"><i class="fa-solid fa-tag"></i> Variable</span>' : '$' + formatNumber(p.PrecioVenta)}</div>
-          <div class="product-stock">Stock: ${p.Stock}</div>
+          <div class="product-stock">${(p.ControlaStock !== undefined && parseInt(p.ControlaStock) === 0) ? 'Stock: Fijo' : 'Stock: ' + p.Stock}</div>
         </div>
       </div>
     `).join('');
@@ -963,7 +963,8 @@ function agregarAlCarrito(producto, cantidad = 1, factor = 1, precioPack = null,
 
   const unidadesNuevas = cantidad * factor;
 
-  if (!permiteStockNegativo() && totalFisicoActual + unidadesNuevas > parseFloat(producto.Stock)) {
+  const controlaStock = producto.ControlaStock === undefined || parseInt(producto.ControlaStock) === 1;
+  if (controlaStock && !permiteStockNegativo() && totalFisicoActual + unidadesNuevas > parseFloat(producto.Stock)) {
     toast(`No hay suficiente stock para "${producto.Nombre}". Disponible: ${producto.Stock} unidades (en carrito: ${totalFisicoActual}).`, 'warn');
     return;
   }
@@ -981,6 +982,7 @@ function agregarAlCarrito(producto, cantidad = 1, factor = 1, precioPack = null,
       PrecioBaseUnitario: precioBaseUnitario,
       PrecioVenta: precioUnitario,
       Stock: parseFloat(producto.Stock),
+      ControlaStock: producto.ControlaStock !== undefined ? parseInt(producto.ControlaStock) : 1,
       cantidad: cantidad,
       factor: factor,
       descPack: descPack,
@@ -1050,7 +1052,8 @@ function cambiarCantidad(index, delta) {
     .filter((it, idx) => idx !== index && it.ProductoID === item.ProductoID)
     .reduce((sum, it) => sum + (it.cantidad * (it.factor || 1)), 0);
 
-  if (!permiteStockNegativo() && (totalFisicoOtros + (nuevaCant * factor)) > item.Stock) {
+  const controlaStock = item.ControlaStock === undefined || parseInt(item.ControlaStock) === 1;
+  if (controlaStock && !permiteStockNegativo() && (totalFisicoOtros + (nuevaCant * factor)) > item.Stock) {
     toast(`Stock máximo disponible: ${item.Stock} unidades (${Math.floor(item.Stock / factor)} packs)`, 'warn');
     return;
   }

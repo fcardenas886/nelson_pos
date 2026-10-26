@@ -18,7 +18,7 @@ try {
     if (!empty($query)) {
         // Búsqueda directa por texto / código de barra principal / códigos alternativos / PLU
         $stmt = $pdo->prepare("
-            SELECT p.ProductoID, p.CodigoBarras, p.Nombre, p.PrecioVenta, p.CostoCompra, p.Stock, p.StockMinimo, p.UnidadMedida, p.EsPesable, p.EsPrecioVariable, p.CodigoPLU, p.CategoriaID,
+            SELECT p.ProductoID, p.CodigoBarras, p.Nombre, p.PrecioVenta, p.CostoCompra, p.Stock, p.StockMinimo, p.UnidadMedida, COALESCE(p.ControlaStock, 1) AS ControlaStock, p.EsPesable, p.EsPrecioVariable, p.CodigoPLU, p.CategoriaID,
                    cat.Nombre AS CategoriaNombre,
                    pr.PromocionID, pr.Tipo AS PromoTipo, pr.CantidadMinima AS PromoCantMin, pr.DescuentoPorcentaje AS PromoDescPorc, pr.PrecioOferta AS PromoPrecioOf,
                    pc_match.CodigoBarras AS CodigoAltMatch,
@@ -51,7 +51,7 @@ try {
         // Productos que no tienen costo asignado (CostoCompra = 0 o NULL)
         $sqlCat = ($categoriaId > 0) ? " AND p.CategoriaID = :catId" : "";
         $stmt = $pdo->prepare("
-            SELECT p.ProductoID, p.CodigoBarras, p.Nombre, p.PrecioVenta, p.CostoCompra, p.Stock, p.StockMinimo, p.UnidadMedida, p.EsPesable, p.EsPrecioVariable, p.CodigoPLU, p.CategoriaID,
+            SELECT p.ProductoID, p.CodigoBarras, p.Nombre, p.PrecioVenta, p.CostoCompra, p.Stock, p.StockMinimo, p.UnidadMedida, COALESCE(p.ControlaStock, 1) AS ControlaStock, p.EsPesable, p.EsPrecioVariable, p.CodigoPLU, p.CategoriaID,
                    cat.Nombre AS CategoriaNombre,
                    pr.PromocionID, pr.Tipo AS PromoTipo, pr.CantidadMinima AS PromoCantMin, pr.DescuentoPorcentaje AS PromoDescPorc, pr.PrecioOferta AS PromoPrecioOf
             FROM productos p
@@ -66,7 +66,7 @@ try {
     } elseif ($filtro === 'mas_vendidos') {
         // Ordenado por mayor volumen de venta histórico en detalleventas (compatible con ONLY_FULL_GROUP_BY)
         $stmt = $pdo->query("
-            SELECT p.ProductoID, p.CodigoBarras, p.Nombre, p.PrecioVenta, p.CostoCompra, p.Stock, p.StockMinimo, p.UnidadMedida, p.EsPesable, p.EsPrecioVariable, p.CodigoPLU, p.CategoriaID,
+            SELECT p.ProductoID, p.CodigoBarras, p.Nombre, p.PrecioVenta, p.CostoCompra, p.Stock, p.StockMinimo, p.UnidadMedida, COALESCE(p.ControlaStock, 1) AS ControlaStock, p.EsPesable, p.EsPrecioVariable, p.CodigoPLU, p.CategoriaID,
                    cat.Nombre AS CategoriaNombre,
                    pr.PromocionID, pr.Tipo AS PromoTipo, pr.CantidadMinima AS PromoCantMin, pr.DescuentoPorcentaje AS PromoDescPorc, pr.PrecioOferta AS PromoPrecioOf,
                    COALESCE(ventas.TotalVendido, 0) AS TotalVendido
@@ -85,7 +85,7 @@ try {
     } elseif ($filtro === 'ofertas') {
         // Solo productos con promociones u ofertas activas
         $stmt = $pdo->query("
-            SELECT p.ProductoID, p.CodigoBarras, p.Nombre, p.PrecioVenta, p.CostoCompra, p.Stock, p.StockMinimo, p.UnidadMedida, p.EsPesable, p.EsPrecioVariable, p.CodigoPLU, p.CategoriaID,
+            SELECT p.ProductoID, p.CodigoBarras, p.Nombre, p.PrecioVenta, p.CostoCompra, p.Stock, p.StockMinimo, p.UnidadMedida, COALESCE(p.ControlaStock, 1) AS ControlaStock, p.EsPesable, p.EsPrecioVariable, p.CodigoPLU, p.CategoriaID,
                    cat.Nombre AS CategoriaNombre,
                    pr.PromocionID, pr.Tipo AS PromoTipo, pr.CantidadMinima AS PromoCantMin, pr.DescuentoPorcentaje AS PromoDescPorc, pr.PrecioOferta AS PromoPrecioOf
             FROM productos p
@@ -98,7 +98,7 @@ try {
     } elseif ($filtro === 'categoria' && $categoriaId > 0) {
         // Filtrado por categoría específica
         $stmt = $pdo->prepare("
-            SELECT p.ProductoID, p.CodigoBarras, p.Nombre, p.PrecioVenta, p.CostoCompra, p.Stock, p.StockMinimo, p.UnidadMedida, p.EsPesable, p.EsPrecioVariable, p.CodigoPLU, p.CategoriaID,
+            SELECT p.ProductoID, p.CodigoBarras, p.Nombre, p.PrecioVenta, p.CostoCompra, p.Stock, p.StockMinimo, p.UnidadMedida, COALESCE(p.ControlaStock, 1) AS ControlaStock, p.EsPesable, p.EsPrecioVariable, p.CodigoPLU, p.CategoriaID,
                    cat.Nombre AS CategoriaNombre,
                    pr.PromocionID, pr.Tipo AS PromoTipo, pr.CantidadMinima AS PromoCantMin, pr.DescuentoPorcentaje AS PromoDescPorc, pr.PrecioOferta AS PromoPrecioOf
             FROM productos p
@@ -112,7 +112,7 @@ try {
     } else {
         // Catálogo general (Todos, orden alfabético)
         $stmt = $pdo->query("
-            SELECT p.ProductoID, p.CodigoBarras, p.Nombre, p.PrecioVenta, p.CostoCompra, p.Stock, p.StockMinimo, p.UnidadMedida, p.EsPesable, p.EsPrecioVariable, p.CodigoPLU, p.CategoriaID,
+            SELECT p.ProductoID, p.CodigoBarras, p.Nombre, p.PrecioVenta, p.CostoCompra, p.Stock, p.StockMinimo, p.UnidadMedida, COALESCE(p.ControlaStock, 1) AS ControlaStock, p.EsPesable, p.EsPrecioVariable, p.CodigoPLU, p.CategoriaID,
                    cat.Nombre AS CategoriaNombre,
                    pr.PromocionID, pr.Tipo AS PromoTipo, pr.CantidadMinima AS PromoCantMin, pr.DescuentoPorcentaje AS PromoDescPorc, pr.PrecioOferta AS PromoPrecioOf
             FROM productos p

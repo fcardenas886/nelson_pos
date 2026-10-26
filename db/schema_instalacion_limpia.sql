@@ -579,6 +579,7 @@ CREATE TABLE `productos` (
   `CostoCompra` int NOT NULL DEFAULT '0',
   `EsAfecto` tinyint(1) NOT NULL DEFAULT '1',
   `Activo` tinyint(1) NOT NULL DEFAULT '1',
+  `ControlaStock` tinyint(1) NOT NULL DEFAULT '1',
   `EsPesable` tinyint(1) DEFAULT '0',
   `EsPrecioVariable` tinyint(1) NOT NULL DEFAULT '0',
   `CodigoPLU` varchar(4) COLLATE utf8mb4_spanish_ci DEFAULT NULL,

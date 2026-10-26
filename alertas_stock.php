@@ -13,7 +13,7 @@ $stmt = $pdo->query("
     LEFT JOIN categorias c ON p.CategoriaID = c.CategoriaID
     LEFT JOIN detalleventas dv ON p.ProductoID = dv.ProductoID
     LEFT JOIN ventas v ON dv.VentaID = v.VentaID AND v.Estado = 'Completada'
-    WHERE p.Activo = TRUE AND p.Stock <= p.StockMinimo
+    WHERE p.Activo = TRUE AND COALESCE(p.ControlaStock, 1) = 1 AND p.Stock <= p.StockMinimo
     GROUP BY p.ProductoID
     ORDER BY p.Stock ASC
 ");

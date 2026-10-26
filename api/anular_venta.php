@@ -76,9 +76,14 @@ try {
     $stmtUpdV = $pdo->prepare("UPDATE ventas SET Estado = 'Anulada' WHERE VentaID = :vid");
     $stmtUpdV->execute([':vid' => $ventaID]);
 
-    // 2. Obtener detalles de la venta para devolver el stock.
+    // 2. Obtener detalles de la venta para devolver el stock (solo para productos con ControlaStock = 1).
     // Un pack (FactorConversion > 1) descontó Cantidad x Factor unidades al venderse: se repone lo mismo.
-    $stmtD = $pdo->prepare("SELECT ProductoID, Cantidad, FactorConversion, PrecioUnitario FROM detalleventas WHERE VentaID = :vid");
+    $stmtD = $pdo->prepare("
+        SELECT dv.ProductoID, dv.Cantidad, dv.FactorConversion, dv.PrecioUnitario, COALESCE(p.ControlaStock, 1) AS ControlaStock 
+        FROM detalleventas dv
+        LEFT JOIN productos p ON dv.ProductoID = p.ProductoID
+        WHERE dv.VentaID = :vid
+    ");
     $stmtD->execute([':vid' => $ventaID]);
     $detalles = $stmtD->fetchAll();
 
@@ -89,17 +94,20 @@ try {
     ");
 
     foreach ($detalles as $d) {
-        $factor = (float)($d['FactorConversion'] ?? 1) > 0 ? (float)$d['FactorConversion'] : 1.0;
-        $unidadesFisicas = (float)$d['Cantidad'] * $factor;
-        $stmtKardex->execute([
-            ':pid' => $d['ProductoID'],
-            ':pid2' => $d['ProductoID'],
-            ':vid' => $ventaID,
-            ':cant' => $unidadesFisicas,
-            ':cant2' => $unidadesFisicas,
-            ':val' => $d['PrecioUnitario']
-        ]);
-        $stmtUpdStock->execute([':cant' => $unidadesFisicas, ':pid' => $d['ProductoID']]);
+        $controla = (int)($d['ControlaStock'] ?? 1);
+        if ($controla === 1) {
+            $factor = (float)($d['FactorConversion'] ?? 1) > 0 ? (float)$d['FactorConversion'] : 1.0;
+            $unidadesFisicas = (float)$d['Cantidad'] * $factor;
+            $stmtKardex->execute([
+                ':pid' => $d['ProductoID'],
+                ':pid2' => $d['ProductoID'],
+                ':vid' => $ventaID,
+                ':cant' => $unidadesFisicas,
+                ':cant2' => $unidadesFisicas,
+                ':val' => $d['PrecioUnitario']
+            ]);
+            $stmtUpdStock->execute([':cant' => $unidadesFisicas, ':pid' => $d['ProductoID']]);
+        }
     }
 
     // 3. Registrar en AuditoriaEventos si existe la tabla

@@ -124,7 +124,7 @@ try {
 
                 if ($pid <= 0 || $cant <= 0) continue;
 
-                $stmtP = $pdo->prepare("SELECT ProductoID, Nombre, PrecioVenta, CostoCompra, Stock, EsAfecto, EsPrecioVariable FROM productos WHERE ProductoID = :pid FOR UPDATE");
+                $stmtP = $pdo->prepare("SELECT ProductoID, Nombre, PrecioVenta, CostoCompra, Stock, ControlaStock, EsAfecto, EsPrecioVariable FROM productos WHERE ProductoID = :pid FOR UPDATE");
                 $stmtP->execute([':pid' => $pid]);
                 $prod = $stmtP->fetch(PDO::FETCH_ASSOC);
 
@@ -194,22 +194,25 @@ try {
                     ':subtotal' => $ip['subtotal']
                 ]);
 
-                $stmtUpdStock->execute([
-                    ':cant_fisica' => $ip['unidadesFisicas'],
-                    ':pid' => $ip['prod']['ProductoID']
-                ]);
+                $controlaStock = (int)($ip['prod']['ControlaStock'] ?? 1);
+                if ($controlaStock === 1) {
+                    $stmtUpdStock->execute([
+                        ':cant_fisica' => $ip['unidadesFisicas'],
+                        ':pid' => $ip['prod']['ProductoID']
+                    ]);
 
-                // Saldo encadenado: si el producto aparece en varias líneas, cada una parte del saldo de la anterior
-                $pidK = $ip['prod']['ProductoID'];
-                $stockCorriente[$pidK] = ($stockCorriente[$pidK] ?? (float)$ip['prod']['Stock']) - $ip['unidadesFisicas'];
-                $nuevoStock = $stockCorriente[$pidK];
-                $stmtKardex->execute([
-                    ':pid' => $ip['prod']['ProductoID'],
-                    ':vid' => $ventaID,
-                    ':cant_fisica' => $ip['unidadesFisicas'],
-                    ':saldo' => $nuevoStock,
-                    ':val' => $ip['precio']
-                ]);
+                    // Saldo encadenado: si el producto aparece en varias líneas, cada una parte del saldo de la anterior
+                    $pidK = $ip['prod']['ProductoID'];
+                    $stockCorriente[$pidK] = ($stockCorriente[$pidK] ?? (float)$ip['prod']['Stock']) - $ip['unidadesFisicas'];
+                    $nuevoStock = $stockCorriente[$pidK];
+                    $stmtKardex->execute([
+                        ':pid' => $ip['prod']['ProductoID'],
+                        ':vid' => $ventaID,
+                        ':cant_fisica' => $ip['unidadesFisicas'],
+                        ':saldo' => $nuevoStock,
+                        ':val' => $ip['precio']
+                    ]);
+                }
             }
 
             // 3. Insertar pagos

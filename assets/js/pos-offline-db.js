@@ -111,6 +111,7 @@ class PosOfflineDB {
             Stock: parseFloat(p.Stock) || 0,
             StockMinimo: parseFloat(p.StockMinimo) || 0,
             UnidadMedida: p.UnidadMedida || 'UN',
+            ControlaStock: p.ControlaStock !== undefined ? parseInt(p.ControlaStock) : 1,
             EsPesable: !!(parseInt(p.EsPesable) === 1 || p.EsPesable === true),
             CodigoPLU: p.CodigoPLU ? String(p.CodigoPLU).trim() : null,
             CategoriaID: p.CategoriaID ? parseInt(p.CategoriaID) : null,
@@ -255,6 +256,7 @@ class PosOfflineDB {
       Stock: p.Stock,
       StockMinimo: p.StockMinimo,
       UnidadMedida: p.UnidadMedida,
+      ControlaStock: p.ControlaStock !== undefined ? parseInt(p.ControlaStock) : 1,
       EsPesable: p.EsPesable ? 1 : 0,
       CodigoPLU: p.CodigoPLU,
       CategoriaID: p.CategoriaID,
@@ -300,9 +302,12 @@ class PosOfflineDB {
           reqP.onsuccess = () => {
             const p = reqP.result;
             if (p) {
-              const factor = it.factor || 1;
-              p.Stock = Math.max(0, p.Stock - (it.cantidad * factor));
-              storeProd.put(p);
+              const controla = p.ControlaStock === undefined || parseInt(p.ControlaStock) === 1;
+              if (controla) {
+                const factor = it.factor || 1;
+                p.Stock = Math.max(0, p.Stock - (it.cantidad * factor));
+                storeProd.put(p);
+              }
             }
           };
         }
